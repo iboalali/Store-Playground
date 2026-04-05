@@ -77,16 +77,17 @@ The application reads and writes exclusively to a designated `Workspace` directo
     │       ├── short_description.txt
     │       ├── full_description.txt
     │       ├── video_url.txt
-    │       ├── high_res_icon.png                    <- Store Icon (Uploaded)
-    │       ├── feature_graphic.png                  <- Feature Graphic (Uploaded)
+    │       ├── high_res_icon.png                    <- Store Icon (Uploaded, API type: icon)
+    │       ├── feature_graphic.png                  <- Feature Graphic (Uploaded, API type: featureGraphic)
+    │       ├── tv_banner.png                        <- TV Banner (Uploaded, API type: tvBanner)
     │       └── /screenshots
-    │           ├── /phone                           <- Variant Sub-directories
+    │           ├── /phone                           <- API type: phoneScreenshots
     │           │   ├── 01_login.png                 <- Ordered via numeric prefix
     │           │   └── 02_home.png
-    │           ├── /tablet_7
-    │           ├── /tablet_10
-    │           ├── /tv
-    │           └── /wear
+    │           ├── /tablet_7                        <- API type: sevenInchScreenshots
+    │           ├── /tablet_10                       <- API type: tenInchScreenshots
+    │           ├── /tv                              <- API type: tvScreenshots
+    │           └── /wear                            <- API type: wearScreenshots
     └── /v1.1_Holiday                                <- Current/Live Version Directory
 ```
 
@@ -151,7 +152,7 @@ Located inside each Version Directory. Controls chronological sorting, tracks pu
 * **Backend:** Main process reads the workspace directory. Iterates through app folders.
 * **Data Sources:** Reads `app_config.json` (Name) and `local_ui_icon.png` (Thumbnail).
 * **UI Constraint:** Fast loading. Does not deeply scan version folders yet.
-* **Action (Add App):** An "Add App" button prompts for a package name and display name. The backend creates a new app root directory named by the package ID, containing a populated `app_config.json`, an empty `app_details.json`, and a placeholder `local_ui_icon.png`.
+* **Action (Add App):** An "Add App" button prompts for a package name and display name, with an optional file picker for a custom app icon. The backend creates a new app root directory named by the package ID, containing a populated `app_config.json`, an empty `app_details.json`, and the provided icon saved as `local_ui_icon.png`. If no icon is provided, a bundled generic app icon is used instead.
 * **Action (Import from Play Console):** An "Import from Play Console" button prompts for a package name. Requires an authenticated service account. The backend fetches the live app data from Google Play and creates the full local structure (reuses the Import Live flow from Section 9.3, targeting a new app root directory).
 
 ### Screen 2: App Dashboard
@@ -164,6 +165,7 @@ Located inside each Version Directory. Controls chronological sorting, tracks pu
 * **Action (New Listing):** Clicking "Create New" executes `fs.cpSync()` to duplicate the liveVersionDir folder as a starting point. It requires the user to input a new name, generates a new `createdAt` timestamp, and renames the new folder.
 * **Action (Duplicate Listing):** Each listing (both Latest and Historical) features a "Duplicate" button. Clicking this triggers a prompt with a required field for a new listing name. Once provided, it executes fs.cpSync() to duplicate that specific folder's entire contents into a new directory, generating a new `createdAt` timestamp. This creates a fully pre-populated starting point based on the selected version.
 * **Action (Import as New Latest):** Clicking "Import Live Data" from the Dashboard prompts the backend to fetch the exact current live state of the app directly from Google Play. It generates a new timestamped version directory (e.g., `/Imported_YYYYMMDD`), updates the app_details.json with the live global metadata, builds out all active BCP-47 locale directories, saves all fetched text assets into corresponding `.txt` files, and downloads all live images/screenshots into their respective sub-directories. Finally, it updates `app_config.json -> liveVersionDir` to automatically set this newly imported folder as the "Latest Listing".
+* **Action (Rename Listing):** Each listing features a "Rename" option. Clicking this opens an inline editable field pre-filled with the current folder name. Upon confirmation, the backend renames the version directory via `fs.renameSync()`. If the renamed listing is the `liveVersionDir`, `app_config.json -> liveVersionDir` is updated to reflect the new name.
 * **Action (Delete Listing):** Each listing features a "Delete" button. Clicking this triggers a confirmation dialog. Upon confirmation, the version directory is moved to the OS trash via `electron.shell.trashItem()`. If the deleted listing was the `liveVersionDir`, the user is prompted to select a new latest listing.
 * **Action (Archive Listing):** Each listing features an "Archive" button that sets `status` to `archived` in the version's `version_metadata.json`. Archived listings are hidden by default but visible via a "Show Archived" toggle on the Dashboard.
 * **Action (Delete App):** The Dashboard header includes a "Delete App" action (e.g., in a menu or danger zone). Clicking this triggers a confirmation dialog warning that the entire app directory will be removed. Upon confirmation, the app folder is moved to the OS trash.
@@ -173,15 +175,15 @@ Located inside each Version Directory. Controls chronological sorting, tracks pu
 * **Action:** User opens a specific version folder.
 * **Layout:** Tabbed (and scrollable horizontally if there are too many to fit the current width of the UI) or side-by-side Locale views. Tabs display human-readable locale names with BCP-47 tags as subtitles (e.g., "English (US)" with `en-US` below).
 * **Action (Import Overwrite):** Includes an "Import Live Data" button within the editor. Clicking this triggers a warning prompt. Upon confirmation, it fetches the live state from Google Play and overwrites the contents of the currently open version directory. Existing `.txt` files are replaced, existing images are deleted and replaced with downloaded live images, and active locales are synced without creating a new version folder.
-* **Action (Add Localization):** Includes an "Add Localization" button that opens a searchable dropdown menu. The dropdown list is fetched from the Google Play API when authenticated (falls back to a hardcoded list when offline). The user can type the language name to filter options. Display format: "Spanish (Latin America) — es-419". Selecting a language creates a new BCP-47 locale sub-directory populated with the necessary empty `.txt` files and image folders.
+* **Action (Add Localization):** Includes an "Add Localization" button that opens a searchable dropdown menu populated from a hardcoded list of all 77 Google Play supported locales (see Section 9.4). The user can type the language name to filter options. Display format: "Spanish (Latin America) — es-419". Selecting a language creates a new BCP-47 locale sub-directory populated with the necessary empty `.txt` files and image folders.
 * **Action (Duplicate Localization):** Includes a "Duplicate" button within each localization tab. Clicking this opens a searchable dropdown (similar to "Add Localization") to select a target language. Selecting the target language executes `fs.cpSync()` to copy the current locale's directory (including all text files and images) into a new BCP-47 locale sub-directory, providing a complete starting point for the new localization.
 * **Action (Delete Localization):** Each locale tab includes a "Delete" option. Clicking this triggers a confirmation dialog. Upon confirmation, the locale sub-directory is moved to OS trash.
 * **Text Editing:** Textareas mapped directly to `title.txt`, `short_description.txt`, `full_description.txt`, etc. Each textarea displays a live character count against its maximum.
 * **Video URL:** A text input field mapped to `video_url.txt`. Validated as a properly formatted URL.
 * **Image Management:** 
   * Images are displayed in a responsive grid layout that automatically adapts to the available width of the UI.
-  * Drag-and-drop zones mapped to `/screenshots/phone`, etc.
-  * Dropping an image triggers absolute path extraction, validation, and `fs.copyFileSync()` into the workspace.
+  * Each image slot supports two methods for adding images: a **file picker** button or **drag-and-drop**. Both are mapped to the relevant directory (`/screenshots/phone`, etc.).
+  * Adding an image (via either method) triggers validation, then `fs.copyFileSync()` into the workspace.
   * Reordering in the UI physically renames the files in the directory (e.g., `01_...`, `02_...`).
   * Individual images can be deleted via a delete button on each image thumbnail (confirmation dialog, then moved to OS trash).
 
@@ -198,10 +200,14 @@ The "Publish" button is disabled until the localized payload passes these strict
 
 ### 7.2 Image Validation
 
-* `high_res_icon.png`: Exactly 512x512 px. Max 1MB. (PNG/JPEG)
-* `feature_graphic.png`: Exactly 1024x500 px. Max 1MB. (PNG/JPEG)
-* `screenshots/*`: Min length 320px, Max length 3840px. Max aspect ratio 2:1. (PNG/JPEG)
-* Screenshot count per type per locale: Minimum 2, maximum 8. Enforced on publish.
+* `high_res_icon.png`: Exactly 512x512 px. Max 1MB. 32-bit PNG with alpha only.
+* `feature_graphic.png`: Exactly 1024x500 px. Max 1MB. (JPEG or 24-bit PNG, no alpha)
+* `tv_banner.png`: Exactly 1280x720 px. Max 1MB. (JPEG or 24-bit PNG, no alpha)
+* `screenshots/*`: Min length 320px, Max length 3840px. Max aspect ratio 2:1. Max 8MB per file. (JPEG or 24-bit PNG, no alpha)
+* Screenshot count per type per locale (enforced on publish):
+  * `phoneScreenshots`: Min 2, max 8.
+  * `sevenInchScreenshots` / `tenInchScreenshots`: Min 4, max 8 (when provided).
+  * `tvScreenshots` / `wearScreenshots`: Min 1, max 8 (when provided).
 
 ### 7.3 Video Validation
 
@@ -233,7 +239,7 @@ Long-running operations (Publish, Import) display an inline progress section in 
 
 ### 9.1 Authentication
 
-The application requires a **Google Cloud Service Account JSON Key** with "Editor" access to the Google Play Console. The path to this key is configured in the application's Settings page (see Section 6).
+The application requires a **Google Cloud Service Account JSON Key**. The service account must be invited as a user in the Google Play Console with at least the **"Manage store presence"** permission (`CAN_MANAGE_PUBLIC_LISTING_GLOBAL`). The OAuth scope used is `https://www.googleapis.com/auth/androidpublisher`. The path to the key file is configured in the application's Settings page (see Section 6).
 
 ### 9.2 The Publish Transaction Flow (Write)
 
@@ -244,7 +250,7 @@ When pushing a release, the Node backend executes the following sequential steps
 1. **Iterate Locales:** Loop through each locale folder (e.g., `en-US`):
     * Push texts (including `video` field from `video_url.txt`) via `play.edits.listings.update()`.
     * **Smart Image Diff:** Before uploading images for a locale, fetch the current live image list via `play.edits.images.list()`. Compare local images with live images (by hash or URL comparison). Delete only images that are no longer present locally via `play.edits.images.delete()`. Upload only images that are new or changed via `play.edits.images.upload()`. This avoids unnecessary re-uploads and prevents screenshot duplication.
-    * Sort screenshots alphanumerically, then push sequentially to the respective image types (phone, sevenInch, tenInch) via `play.edits.images.upload()`.
+    * Sort screenshots alphanumerically, then push sequentially to the respective image types (`phoneScreenshots`, `sevenInchScreenshots`, `tenInchScreenshots`, `tvScreenshots`, `wearScreenshots`) via `play.edits.images.upload()`.
 1. **Commit:** `play.edits.commit({ editId })`.
 1. **Post-Commit Hooks:**
     * Update `app_config.json -> liveVersionDir` to match the newly published folder.
@@ -267,7 +273,7 @@ When importing the current live state, the backend uses the API as a read-only s
 
 ### 9.4 BCP-47 Locale List
 
-The "Add Localization" and "Duplicate Localization" dropdowns source their locale list from the Google Play API via `play.edits.listings.list()` when authenticated. If the service account is not configured or the network is unavailable, the app falls back to a **hardcoded static list** of all ~80 locales supported by Google Play. The static list is updated periodically with new releases of the application.
+The "Add Localization" and "Duplicate Localization" dropdowns are populated from a **hardcoded static list** of all 77 locales supported by Google Play. There is no dedicated API endpoint to fetch supported locales — `play.edits.listings.list()` only returns locales that already have active listings for a given app, not the full set of available locales. The static list should be updated periodically with new releases of the application to stay in sync with Google Play.
 
 Display format in the UI: human-readable name + BCP-47 tag (e.g., "Spanish (Latin America) — es-419").
 
