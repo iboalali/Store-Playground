@@ -1,0 +1,16 @@
+appId: com.store-playground.app
+productName: Store Playground
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**/*
+  - "!out/types-*"
+asarUnpack:
+  - "node_modules/sharp/**"
+win:
+  target: nsis
+mac:
+  target: dmg
+linux:
+  target: AppImage
