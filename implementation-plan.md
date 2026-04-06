@@ -661,3 +661,6 @@ End-to-end verification after Phase 9:
 15. Switch month range -> all views update -> switch to "All Apps" -> shows combined data
 16. Keyboard shortcuts and menu bar all functional
 17. Package with electron-builder -> built app launches correctly
+
+## Future Work
+* Release notes
