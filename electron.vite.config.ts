@@ -4,6 +4,11 @@ import { resolve } from 'path'
 
 export default defineConfig({
   main: {
+    resolve: {
+      alias: {
+        $shared: resolve('src/shared')
+      }
+    },
     build: {
       rollupOptions: {
         external: ['sharp']
@@ -11,6 +16,11 @@ export default defineConfig({
     }
   },
   preload: {
+    resolve: {
+      alias: {
+        $shared: resolve('src/shared')
+      }
+    },
     build: {
       rollupOptions: {
         external: ['sharp']

@@ -1,30 +1,71 @@
 <script lang="ts">
-  let greeting = $state('Store Playground')
+  import { getRoute, goSettings } from './router.svelte'
+  import { settingsStore } from './stores/settings.svelte'
+  import Header from './components/layout/Header.svelte'
+  import Settings from './screens/Settings.svelte'
+
+  let initialized = $state(false)
+
+  $effect(() => {
+    if (!initialized) {
+      initialized = true
+      settingsStore.load().then(() => {
+        if (!settingsStore.isConfigured) {
+          goSettings()
+        }
+      })
+    }
+  })
+
+  const route = $derived(getRoute())
 </script>
 
-<main>
-  <h1>{greeting}</h1>
-  <p>Electron + Svelte 5 scaffolding complete.</p>
-</main>
+{#if !settingsStore.loaded}
+  <div class="loading">
+    <p>Loading...</p>
+  </div>
+{:else}
+  <Header />
+  {#if route.screen === 'settings'}
+    <Settings />
+  {:else if route.screen === 'home'}
+    <main class="placeholder">
+      <p>Home Grid (Phase 3)</p>
+    </main>
+  {:else if route.screen === 'dashboard'}
+    <main class="placeholder">
+      <p>App Dashboard (Phase 4)</p>
+    </main>
+  {:else if route.screen === 'editor'}
+    <main class="placeholder">
+      <p>Store Listing Editor (Phase 5)</p>
+    </main>
+  {:else if route.screen === 'screenshots'}
+    <main class="placeholder">
+      <p>Screenshot Manager (Phase 5.5)</p>
+    </main>
+  {:else if route.screen === 'reports'}
+    <main class="placeholder">
+      <p>Financial Reports (Phase 9)</p>
+    </main>
+  {/if}
+{/if}
 
 <style>
-  main {
+  .loading {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
-
-  h1 {
-    font-size: 2.5rem;
-    color: #1a1a1a;
-    margin-bottom: 0.5rem;
-  }
-
-  p {
     color: #666;
-    font-size: 1.1rem;
+  }
+
+  .placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 48px);
+    color: #999;
+    font-size: 1.125rem;
   }
 </style>
