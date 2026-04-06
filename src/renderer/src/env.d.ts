@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppEntry } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 interface Api {
@@ -29,6 +29,10 @@ interface Api {
     appName: string
     packageName: string
   }): Promise<IpcResult<AppEntry>>
+  readAppDetails(args: { appPath: string }): Promise<IpcResult<AppDetails>>
+  listVersions(args: { appPath: string }): Promise<IpcResult<VersionEntry[]>>
+  copyDirectory(args: { src: string; dest: string }): Promise<IpcResult<void>>
+  renameItem(args: { oldPath: string; newPath: string }): Promise<IpcResult<void>>
 }
 
 declare global {

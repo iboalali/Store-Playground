@@ -1,9 +1,11 @@
 <script lang="ts">
   import { getRoute, goSettings } from './router.svelte'
   import { settingsStore } from './stores/settings.svelte'
+  import { currentAppStore } from './stores/current-app.svelte'
   import Header from './components/layout/Header.svelte'
   import Settings from './screens/Settings.svelte'
   import HomeGrid from './screens/HomeGrid.svelte'
+  import AppDashboard from './screens/AppDashboard.svelte'
 
   let initialized = $state(false)
 
@@ -26,15 +28,13 @@
     <p>Loading...</p>
   </div>
 {:else}
-  <Header />
+  <Header appName={currentAppStore.config?.appName} />
   {#if route.screen === 'settings'}
     <Settings />
   {:else if route.screen === 'home'}
     <HomeGrid />
   {:else if route.screen === 'dashboard'}
-    <main class="placeholder">
-      <p>App Dashboard (Phase 4)</p>
-    </main>
+    <AppDashboard />
   {:else if route.screen === 'editor'}
     <main class="placeholder">
       <p>Store Listing Editor (Phase 5)</p>

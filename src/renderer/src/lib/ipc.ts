@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppEntry } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 function unwrap<T>(result: IpcResult<T>): T {
@@ -65,5 +65,21 @@ export const ipc = {
     packageName: string
   }): Promise<AppEntry> {
     return unwrap(await window.api.createApp(args))
+  },
+
+  async readAppDetails(appPath: string): Promise<AppDetails> {
+    return unwrap(await window.api.readAppDetails({ appPath }))
+  },
+
+  async listVersions(appPath: string): Promise<VersionEntry[]> {
+    return unwrap(await window.api.listVersions({ appPath }))
+  },
+
+  async copyDirectory(src: string, dest: string): Promise<void> {
+    return unwrap(await window.api.copyDirectory({ src, dest }))
+  },
+
+  async renameItem(oldPath: string, newPath: string): Promise<void> {
+    return unwrap(await window.api.renameItem({ oldPath, newPath }))
   }
 }
