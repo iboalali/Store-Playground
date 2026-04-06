@@ -18,6 +18,7 @@ Store-Playground/
 │   │   ├── ipc/
 │   │   │   ├── fs-handlers.ts             # fs:* IPC channels (17 handlers)
 │   │   │   ├── screenshot-handlers.ts     # screenshots:* IPC channels (1 handler)
+│   │   │   ├── reports-handlers.ts        # reports:* IPC channels (import, query)
 │   │   │   ├── api-handlers.ts            # api:* channels (3 handlers)
 │   │   │   ├── settings-handlers.ts       # settings:* channels (2 handlers)
 │   │   │   └── watcher-handlers.ts        # Watcher event forwarding to renderer
@@ -27,6 +28,7 @@ Store-Playground/
 │   │   │   ├── watcher.ts                 # chokidar wrapper with debounce + operation lock
 │   │   │   ├── validation.ts              # Text/image/screenshot validation (pure functions)
 │   │   │   ├── image-utils.ts             # sharp/image-size dimension + format checks
+│   │   │   ├── reports.ts                 # CSV parsing, transaction aggregation, query engine
 │   │   │   └── google-play/
 │   │   │       ├── auth.ts                # Service account auth + client caching
 │   │   │       ├── publish.ts             # Publish transaction flow
@@ -58,6 +60,7 @@ Store-Playground/
 │           │   ├── current-app.svelte.ts  # Selected app + versions
 │           │   ├── editor.svelte.ts       # Active listing: locales, texts, images, dirty flags
 │           │   ├── screenshot-manager.svelte.ts  # Screenshot versions, screens, variants, drag, undo
+│           │   ├── reports.svelte.ts      # Financial reports state, filters, aggregations
 │           │   ├── settings.svelte.ts     # Settings mirror
 │           │   └── progress.svelte.ts     # Publish/import progress + errors
 │           ├── screens/
@@ -65,6 +68,7 @@ Store-Playground/
 │           │   ├── AppDashboard.svelte
 │           │   ├── StoreListingEditor.svelte
 │           │   ├── ScreenshotManager.svelte   # Screenshot library management
+│           │   ├── FinancialReports.svelte    # Revenue analytics dashboard
 │           │   └── Settings.svelte
 │           ├── components/
 │           │   ├── layout/
@@ -93,6 +97,14 @@ Store-Playground/
 │           │   │   ├── VariantGrid.svelte        # Horizontal grid of variant slots
 │           │   │   ├── VariantSlot.svelte        # Image thumbnail/placeholder, drop zone
 │           │   │   └── DragOverlay.svelte        # Visual overlay during drag operations
+│           │   ├── reports/
+│           │   │   ├── CsvImporter.svelte        # Drop zone + file picker for CSV import
+│           │   │   ├── MonthSelector.svelte      # Month/year range picker
+│           │   │   ├── RevenueSummary.svelte     # Summary cards (revenue, fees, net, units)
+│           │   │   ├── RevenueChart.svelte       # Line/bar chart for trends over time
+│           │   │   ├── CountryBreakdown.svelte   # Ranked list or table by buyer country
+│           │   │   ├── ProductBreakdown.svelte   # Revenue breakdown by product/SKU
+│           │   │   └── TransactionTable.svelte   # Paginated table of individual transactions
 │           │   └── shared/
 │           │       ├── ConfirmDialog.svelte
 │           │       ├── Button.svelte
@@ -363,6 +375,264 @@ State-based, no library. A single `router.svelte.ts` exports a `$state<Route>` w
 - Create `electron-builder.yml` — targets for Win/Mac/Linux, asarUnpack for sharp
 - Test packaging with `npm run build` + electron-builder
 
+### Phase 9: Financial Reports & Analytics
+**Goal:** A per-app revenue analytics dashboard, driven by manually imported Play Console CSV reports
+
+**CSV Format (Google Play earnings report):**
+The CSV is **not app-specific** — it contains transactions for all apps in the account. Each row is a single transaction event. Transactions come in pairs: a `Charge` row and a `Google fee` row sharing the same transaction ID (the `Description` column). Refunds appear as separate `Charge refund` and `Google fee refund` rows.
+
+Key columns:
+```
+Description            — Transaction ID (e.g., GPA.3380-1561-1859-06563)
+Transaction Date       — "Dec 1, 2024"
+Transaction Time       — "6:23:05 PM PST"
+Transaction Type       — Charge | Google fee | Charge refund | Google fee refund | Tax
+Refund Type            — (empty or refund reason)
+Product Title          — App display name
+Product id             — Package name (e.g., com.iboalali.hidepersistentnotifications)
+Product Type           — 0 (one-time) | 1 (subscription)
+Sku Id                 — In-app product/subscription SKU (empty for app purchase)
+Hardware               — Device model
+Buyer Country          — 2-letter country code (e.g., US, DE)
+Buyer State            — State/province
+Buyer Postal Code      — Postal code
+Buyer Currency         — Currency code (e.g., USD, EUR)
+Amount (Buyer Currency) — Amount in buyer's currency
+Currency Conversion Rate — Rate used for conversion
+Merchant Currency      — Your payout currency (e.g., EUR)
+Amount (Merchant Currency) — Amount in your currency
+Base Plan ID           — Subscription base plan (if applicable)
+Offer ID               — Subscription offer (if applicable)
+First USD 1M Eligible  — Yes/No (Google's reduced fee program)
+Service Fee %          — Google's fee percentage (e.g., 15)
+```
+
+**File System Structure:**
+```
+/PlayStoreWorkspace/
+├── /reports/                                    <- Shared reports directory (workspace-level)
+│   ├── reports_index.json                       <- Index of imported CSVs + parsed metadata
+│   ├── /csv/                                    <- Raw imported CSV files (kept for re-parsing)
+│   │   ├── earnings_2024_12.csv
+│   │   └── earnings_2025_01.csv
+│   └── /parsed/                                 <- Pre-parsed JSON for fast loading
+│       ├── 2024-12.json                         <- Parsed transactions for Dec 2024
+│       └── 2025-01.json                         <- Parsed transactions for Jan 2025
+```
+
+Reports live at the **workspace level** (not per-app) because a single CSV contains all apps. The app filters by `Product id` (package name) when showing per-app views.
+
+**`reports_index.json`:**
+```json
+{
+  "importedFiles": [
+    {
+      "filename": "earnings_2024_12.csv",
+      "importedAt": "2026-04-06T10:00:00Z",
+      "monthKey": "2024-12",
+      "rowCount": 342,
+      "apps": ["com.iboalali.hidepersistentnotifications", "com.iboalali.otherapp"]
+    }
+  ],
+  "dateRange": { "earliest": "2024-12", "latest": "2025-03" }
+}
+```
+
+**Parsed month JSON (`/parsed/2024-12.json`):**
+```json
+{
+  "month": "2024-12",
+  "transactions": [
+    {
+      "id": "GPA.3380-1561-1859-06563",
+      "date": "2024-12-01T18:23:05-08:00",
+      "type": "charge",
+      "productId": "com.iboalali.hidepersistentnotifications",
+      "productTitle": "Hide Persistent Notifications",
+      "productType": "one-time",
+      "skuId": null,
+      "hardware": "gto",
+      "buyerCountry": "US",
+      "buyerState": "NV",
+      "buyerCurrency": "USD",
+      "buyerAmount": 2.99,
+      "conversionRate": 0.9489,
+      "merchantCurrency": "EUR",
+      "merchantAmount": 2.84,
+      "serviceFeePercent": null,
+      "firstMillionEligible": true
+    },
+    {
+      "id": "GPA.3380-1561-1859-06563",
+      "date": "2024-12-01T18:23:05-08:00",
+      "type": "google-fee",
+      "productId": "com.iboalali.hidepersistentnotifications",
+      "productTitle": "Hide Persistent Notifications",
+      "productType": "one-time",
+      "skuId": null,
+      "hardware": "gto",
+      "buyerCountry": "US",
+      "buyerState": "NV",
+      "buyerCurrency": "USD",
+      "buyerAmount": -0.45,
+      "conversionRate": 0.9489,
+      "merchantCurrency": "EUR",
+      "merchantAmount": -0.43,
+      "serviceFeePercent": 15,
+      "firstMillionEligible": true
+    }
+  ]
+}
+```
+
+**Shared Types — add to `src/shared/types/models.ts`:**
+```typescript
+export interface ReportsIndex {
+  importedFiles: ImportedFile[];
+  dateRange: { earliest: string; latest: string };
+}
+
+export interface ImportedFile {
+  filename: string;
+  importedAt: string;
+  monthKey: string;
+  rowCount: number;
+  apps: string[];
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  type: 'charge' | 'google-fee' | 'charge-refund' | 'google-fee-refund' | 'tax';
+  refundType: string | null;
+  productId: string;
+  productTitle: string;
+  productType: 'one-time' | 'subscription';
+  skuId: string | null;
+  hardware: string;
+  buyerCountry: string;
+  buyerState: string;
+  buyerPostalCode: string;
+  buyerCurrency: string;
+  buyerAmount: number;
+  conversionRate: number;
+  merchantCurrency: string;
+  merchantAmount: number;
+  basePlanId: string | null;
+  offerId: string | null;
+  serviceFeePercent: number | null;
+  firstMillionEligible: boolean;
+}
+
+export interface MonthlyAggregation {
+  month: string;
+  grossRevenue: number;         // Sum of charge merchantAmounts
+  googleFees: number;           // Sum of google-fee merchantAmounts (negative)
+  refunds: number;              // Sum of charge-refund merchantAmounts (negative)
+  netRevenue: number;           // gross + fees + refunds
+  totalTransactions: number;    // Count of charge rows
+  refundCount: number;          // Count of charge-refund rows
+  refundRate: number;           // refundCount / totalTransactions
+  merchantCurrency: string;
+}
+
+export interface CountryAggregation {
+  country: string;
+  grossRevenue: number;
+  transactionCount: number;
+  percentage: number;           // Share of total revenue
+}
+
+export interface ProductAggregation {
+  productId: string;
+  productTitle: string;
+  productType: 'one-time' | 'subscription';
+  skuId: string | null;
+  grossRevenue: number;
+  transactionCount: number;
+}
+```
+
+**New IPC channels:**
+- `reports:import-csv` — Parse a CSV file, extract month key, write to `/parsed/{month}.json`, update `reports_index.json`, copy raw CSV to `/csv/`. Returns import summary.
+- `reports:get-index` — Read `reports_index.json`. Returns the index.
+- `reports:get-month` — Read a parsed month JSON. Payload: `{ monthKey: string }`. Returns transactions array.
+- `reports:get-aggregation` — Compute aggregations on the fly. Payload: `{ monthKeys: string[], appPackageName?: string }`. Returns `{ monthly: MonthlyAggregation[], byCountry: CountryAggregation[], byProduct: ProductAggregation[] }`.
+- `reports:delete-month` — Remove a month's data (parsed JSON + raw CSV). Updates index.
+
+**New IPC handler file:** `src/main/ipc/reports-handlers.ts`
+
+**New service:** `src/main/services/reports.ts`
+- `parseEarningsCsv(csvPath: string)` — stream-parse CSV, normalize column names, convert types, group by month, handle paired charge/fee rows
+- `aggregateByMonth(transactions: Transaction[], appFilter?: string)` — compute MonthlyAggregation
+- `aggregateByCountry(transactions: Transaction[], appFilter?: string)` — compute CountryAggregation[]
+- `aggregateByProduct(transactions: Transaction[])` — compute ProductAggregation[]
+- No external CSV library needed — the format is simple enough for a streaming line-by-line parser. Columns are comma-separated with quoted strings for values containing commas.
+
+**Route — add to `router.svelte.ts`:**
+```typescript
+| { screen: 'reports'; appPath: string }
+```
+6 screens total. Breadcrumb: Home > App Name > Financial Reports.
+
+**Store — create `src/renderer/src/stores/reports.svelte.ts`:**
+- State: index, selectedMonths (range), currentApp (package name for filtering), monthlyData (loaded transactions), aggregations
+- Methods: loadIndex(), importCsv(filePath), loadMonthRange(from, to), computeAggregations()
+- Derived: filteredTransactions (filtered by app), trendData (monthly aggregations over time)
+
+**Components:**
+
+1. `CsvImporter.svelte` — drop zone + file picker for CSV files. Shows list of already imported months. Allows importing multiple CSVs at once. Shows import summary (rows parsed, apps found, month detected).
+
+2. `MonthSelector.svelte` — month/year range picker. Defaults to latest 6 months. Shows available months based on imported data.
+
+3. `RevenueSummary.svelte` — summary cards at top of dashboard:
+   - **Gross Revenue** — total charges in merchant currency
+   - **Google Fees** — total fees (with percentage)
+   - **Refunds** — total refunds (with refund rate %)
+   - **Net Revenue** — gross - fees - refunds
+   - **Transactions** — count of purchases
+   - Each card shows delta vs previous period (arrow up/down + percentage change)
+
+4. `RevenueChart.svelte` — line/bar chart showing month-over-month trends. Built with `<canvas>` + lightweight Chart.js (or plain SVG for zero dependencies). Shows gross revenue, net revenue, and optionally fees/refunds as stacked bars. Hover shows exact values.
+
+5. `CountryBreakdown.svelte` — ranked table: country flag/code, transaction count, gross revenue, percentage of total. Sorted by revenue descending. Top 10 shown by default with "Show all" toggle.
+
+6. `ProductBreakdown.svelte` — table grouped by product: product title, type (one-time/subscription), SKU, revenue, transaction count. Useful when the app has in-app purchases or subscriptions.
+
+7. `TransactionTable.svelte` — paginated, sortable table of individual transactions. Columns: date, type, amount (buyer currency), amount (merchant currency), country, device. Filterable by type (charges only, refunds only, all). Export to CSV button (for filtered views).
+
+**Screen — `FinancialReports.svelte`:**
+- Top bar: CsvImporter (collapsible) + MonthSelector
+- Summary row: RevenueSummary cards
+- Chart section: RevenueChart
+- Two-column layout below: CountryBreakdown (left) + ProductBreakdown (right)
+- Full-width below: TransactionTable
+
+**Navigation:**
+- "Financial Reports" button on `AppDashboard.svelte` alongside the "Screenshot Manager" button
+- The page loads filtered to the current app's package name (from `app_config.json -> packageName`)
+- A dropdown at the top allows switching to "All Apps" view or selecting a different app
+
+**Access from Home Grid (optional):**
+- A small "Reports" icon on each app card, or a global "Reports" entry in the menu bar, could navigate directly
+
+**Charting approach:**
+- Prefer lightweight SVG-based charts (no heavy dependency). If needed, add `chart.js` (63KB gzipped) as a runtime dependency — it covers line, bar, and doughnut charts and works well in Electron.
+
+**Implementation steps:**
+1. Add shared types to `models.ts`, new IPC channel types to `ipc-channels.ts` / `ipc-payloads.ts`
+2. Create `src/main/services/reports.ts` — CSV parser + aggregation functions
+3. Create `src/main/ipc/reports-handlers.ts` — wire 5 IPC channels
+4. Add `reports` route to `router.svelte.ts`, `{:else if}` branch in `App.svelte`
+5. Create `src/renderer/src/stores/reports.svelte.ts`
+6. Build CsvImporter + MonthSelector
+7. Build RevenueSummary cards
+8. Build RevenueChart (SVG or Chart.js)
+9. Build CountryBreakdown + ProductBreakdown tables
+10. Build TransactionTable with pagination + filtering
+11. Wire FinancialReports.svelte screen, add navigation from AppDashboard
+
 ---
 
 ## Verification
@@ -373,7 +643,7 @@ After each phase, verify by:
 3. `npx svelte-check` — no type errors in renderer
 4. `npx tsc --noEmit -p tsconfig.node.json` — no type errors in main/preload
 
-End-to-end verification after Phase 8:
+End-to-end verification after Phase 9:
 1. Launch app -> Settings -> set workspace path -> Home Grid shows apps
 2. Add App -> appears in grid -> click -> Dashboard loads
 3. Create/Duplicate/Rename/Archive/Delete versions
@@ -385,5 +655,9 @@ End-to-end verification after Phase 8:
 9. Add/Duplicate/Delete localizations
 10. (With service account) Import live data, Publish with progress
 11. Edit a .txt file externally -> UI auto-refreshes
-12. Keyboard shortcuts and menu bar all functional
-13. Package with electron-builder -> built app launches correctly
+12. Dashboard -> Financial Reports -> import CSV -> summary cards show revenue, fees, net
+13. Revenue chart shows month-over-month trends -> country and product breakdowns render
+14. Transaction table shows individual rows -> filter by type -> paginate
+15. Switch month range -> all views update -> switch to "All Apps" -> shows combined data
+16. Keyboard shortcuts and menu bar all functional
+17. Package with electron-builder -> built app launches correctly

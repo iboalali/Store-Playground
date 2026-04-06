@@ -48,6 +48,13 @@ Channels are grouped by domain. All calls from the Renderer use `ipcRenderer.inv
 **Screenshot Management (Renderer → Main):**
 * `screenshots:list-screens` — Composite read: returns all screens with their variants and image paths for a given screenshot version directory
 
+**Financial Reports (Renderer → Main):**
+* `reports:import-csv` — Parse an earnings CSV file, group by month, write parsed JSON, update index
+* `reports:get-index` — Read `reports_index.json` (list of imported months, date range, apps)
+* `reports:get-month` — Read parsed transactions for a given month key
+* `reports:get-aggregation` — Compute monthly/country/product aggregations with optional app filter
+* `reports:delete-month` — Remove a month's data (parsed JSON + raw CSV) and update index
+
 **Google Play API (Renderer → Main):**
 * `api:publish` — Execute the full publish transaction flow
 * `api:import-live` — Execute the import live data flow
@@ -72,6 +79,12 @@ Channels are grouped by domain. All calls from the Renderer use `ipcRenderer.inv
 The application reads and writes exclusively to a designated `Workspace` directory.
 ```
 /PlayStoreWorkspace
+├── /reports                                         <- Financial Reports (workspace-level, all apps)
+│   ├── reports_index.json                           <- Index of imported CSVs + metadata
+│   ├── /csv                                         <- Raw imported CSV files
+│   │   └── earnings_2024_12.csv
+│   └── /parsed                                      <- Pre-parsed JSON per month
+│       └── 2024-12.json
 └── /com.mycompany.app_one                           <- App Root (Named by Package ID)
     ├── app_config.json                              <- App identifying info
     ├── app_details.json                             <- Global app metadata
@@ -193,6 +206,95 @@ Located inside each screen directory under a screenshot version. Defines the scr
 * `variantNames` maps slugs to human-readable display names.
 * Variant images are stored as `{slug}.{png|jpg|jpeg}` in the same directory as `_screen.json`.
 
+### 5.6 `reports_index.json`
+
+Located at `{workspace}/reports/`. Tracks all imported financial CSV files and their metadata.
+```
+{
+  "importedFiles": [
+    {
+      "filename": "earnings_2024_12.csv",
+      "importedAt": "2026-04-06T10:00:00Z",
+      "monthKey": "2024-12",
+      "rowCount": 342,
+      "apps": ["com.iboalali.hidepersistentnotifications", "com.iboalali.otherapp"]
+    }
+  ],
+  "dateRange": { "earliest": "2024-12", "latest": "2025-03" }
+}
+```
+
+* `importedFiles` tracks each CSV import with the detected month, row count, and which apps appeared in it.
+* `dateRange` is derived from the full set of imported months for quick access.
+
+### 5.7 Parsed Month Data (`/reports/parsed/{month}.json`)
+
+Pre-parsed transaction data for fast loading. One file per month.
+```
+{
+  "month": "2024-12",
+  "transactions": [
+    {
+      "id": "GPA.3380-1561-1859-06563",
+      "date": "2024-12-01T18:23:05-08:00",
+      "type": "charge",
+      "refundType": null,
+      "productId": "com.iboalali.hidepersistentnotifications",
+      "productTitle": "Hide Persistent Notifications",
+      "productType": "one-time",
+      "skuId": null,
+      "hardware": "gto",
+      "buyerCountry": "US",
+      "buyerState": "NV",
+      "buyerPostalCode": "89102",
+      "buyerCurrency": "USD",
+      "buyerAmount": 2.99,
+      "conversionRate": 0.9489,
+      "merchantCurrency": "EUR",
+      "merchantAmount": 2.84,
+      "basePlanId": null,
+      "offerId": null,
+      "serviceFeePercent": null,
+      "firstMillionEligible": true
+    }
+  ]
+}
+```
+
+* Transactions are normalized from the CSV: column names are camelCased, `Transaction Type` is mapped to a union type (`charge` | `google-fee` | `charge-refund` | `google-fee-refund` | `tax`), `Product Type` is mapped to `one-time` (0) or `subscription` (1), dates are parsed to ISO 8601.
+* Charge and Google fee rows share the same `id` (the transaction ID from the `Description` column). They are stored as separate rows to preserve the original data, and paired during aggregation.
+
+### 5.8 CSV Source Format (Google Play Earnings Report)
+
+The CSV is exported manually from Google Play Console → "Download reports" → "Earnings". It is **not app-specific** — a single CSV contains transactions across all apps in the developer account. The app filters by `Product id` (package name) for per-app views.
+
+Key columns and their types:
+
+| CSV Column | Parsed Field | Notes |
+|---|---|---|
+| Description | `id` | Transaction ID (e.g., GPA.3380-...) |
+| Transaction Date | `date` | Parsed from "Dec 1, 2024" format |
+| Transaction Time | `date` | Combined with date, timezone preserved |
+| Transaction Type | `type` | `Charge` → `charge`, `Google fee` → `google-fee`, `Charge refund` → `charge-refund`, `Google fee refund` → `google-fee-refund`, `Tax` → `tax` |
+| Refund Type | `refundType` | Empty string → null |
+| Product Title | `productTitle` | App display name |
+| Product id | `productId` | Package name |
+| Product Type | `productType` | `0` → `one-time`, `1` → `subscription` |
+| Sku Id | `skuId` | In-app product/subscription SKU, empty → null |
+| Hardware | `hardware` | Device model code |
+| Buyer Country | `buyerCountry` | 2-letter code (US, DE, etc.) |
+| Buyer State | `buyerState` | State/province |
+| Buyer Postal Code | `buyerPostalCode` | Postal code |
+| Buyer Currency | `buyerCurrency` | Currency code (USD, EUR, etc.) |
+| Amount (Buyer Currency) | `buyerAmount` | Parsed as number |
+| Currency Conversion Rate | `conversionRate` | Parsed as number |
+| Merchant Currency | `merchantCurrency` | Your payout currency |
+| Amount (Merchant Currency) | `merchantAmount` | Parsed as number |
+| Base Plan ID | `basePlanId` | Subscription base plan, empty → null |
+| Offer ID | `offerId` | Subscription offer, empty → null |
+| First USD 1M Eligible | `firstMillionEligible` | `Yes` → true, `No` → false |
+| Service Fee % | `serviceFeePercent` | Parsed as number, empty → null |
+
 ## 6. UI/UX Architecture & Data Flow
 
 ### Settings Page
@@ -303,6 +405,53 @@ Each variant holds exactly one screenshot (or is empty).
 #### Empty State
 
 When an app has no `screenshots/` directory yet, the page shows a welcome message with a "Create First Screenshot Version" button. This creates the `screenshots/` directory, `screenshot_config.json`, and a first empty version.
+
+### Screen 5: Financial Reports
+
+* **Access:** A "Financial Reports" button on the App Dashboard, alongside "Screenshot Manager". Breadcrumb: Home > App Name > Financial Reports.
+* **Purpose:** A per-app revenue analytics dashboard driven by manually imported Google Play Console earnings CSV files. Since the Google Play Developer API does not expose financial data, users export CSVs from the Play Console and import them into the app.
+* **Data location:** Reports are stored at the **workspace level** (`{workspace}/reports/`), not per-app, because a single CSV contains all apps. The UI filters by `Product id` (package name) for per-app views.
+
+#### CSV Import
+
+* **Action (Import CSV):** A collapsible "Import" section at the top of the page provides a drop zone and file picker for CSV files. Multiple CSVs can be imported at once.
+* **Import flow:** The backend parses the CSV, auto-detects the month from the transaction dates, normalizes column names and types, writes a parsed JSON file to `/reports/parsed/{month}.json`, copies the raw CSV to `/reports/csv/`, and updates `reports_index.json`. If a month is re-imported, the old parsed data is replaced.
+* **Import summary:** After import, the UI shows: rows parsed, month detected, apps found, and any parse errors.
+
+#### Dashboard Layout
+
+* **Top bar:** CsvImporter (collapsible) + MonthSelector (month/year range picker, defaults to latest 6 months)
+* **App filter:** Defaults to the current app's package name. A dropdown allows switching to "All Apps" or a different specific app.
+* **Summary cards row:** `RevenueSummary` — four cards showing:
+  * **Gross Revenue** — sum of charge amounts in merchant currency
+  * **Google Fees** — sum of fee amounts (with percentage of gross)
+  * **Refunds** — sum of refund amounts (with refund rate %)
+  * **Net Revenue** — gross + fees + refunds (fees and refunds are negative)
+  * Each card shows delta vs the previous period (arrow + percentage change)
+* **Chart section:** `RevenueChart` — line/bar chart showing month-over-month trends. Gross revenue and net revenue as lines; optionally fees and refunds as stacked bars. Hover shows exact values.
+* **Two-column breakdown:**
+  * **Left — Country Breakdown:** Ranked table of buyer countries by revenue (country code, transaction count, gross revenue, % of total). Top 10 by default with "Show all" toggle.
+  * **Right — Product Breakdown:** Table grouped by product: product title, type (one-time/subscription), SKU, revenue, transaction count. Useful for apps with in-app purchases or subscriptions.
+* **Full-width transaction table:** Paginated, sortable table of individual transactions. Columns: date, type, amount (buyer currency), amount (merchant currency), country, device. Filterable by type (charges, refunds, fees, all).
+
+#### Aggregation Engine
+
+Aggregations are computed in the main process via the `reports:get-aggregation` IPC channel:
+* **Monthly:** gross revenue, fees, refunds, net revenue, transaction count, refund rate, per month
+* **By country:** revenue and transaction count per buyer country
+* **By product:** revenue and transaction count per Product id / SKU
+
+All aggregations support an optional `appPackageName` filter to scope to a single app.
+
+#### Future Extensibility
+
+The data model and aggregation engine are designed to support additional analytics in the future:
+* **ARPU** (average revenue per user) — if install count data is manually entered or imported
+* **MRR** (monthly recurring revenue) — derived from subscription charges
+* **Subscription cohort retention** — tracking renewal rates over time per signup month
+* **Custom date grouping** — weekly or quarterly views
+
+These can be added as new aggregation functions and UI components without changing the storage format.
 
 ## 7. Pre-Flight Validation Engine
 
