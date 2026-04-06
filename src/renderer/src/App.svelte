@@ -3,6 +3,7 @@
   import { settingsStore } from './stores/settings.svelte'
   import Header from './components/layout/Header.svelte'
   import Settings from './screens/Settings.svelte'
+  import HomeGrid from './screens/HomeGrid.svelte'
 
   let initialized = $state(false)
 
@@ -29,9 +30,7 @@
   {#if route.screen === 'settings'}
     <Settings />
   {:else if route.screen === 'home'}
-    <main class="placeholder">
-      <p>Home Grid (Phase 3)</p>
-    </main>
+    <HomeGrid />
   {:else if route.screen === 'dashboard'}
     <main class="placeholder">
       <p>App Dashboard (Phase 4)</p>
