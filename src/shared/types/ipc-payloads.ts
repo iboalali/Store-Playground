@@ -1,4 +1,4 @@
-import type { Settings } from './models'
+import type { Settings, AppConfig, AppEntry } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -26,3 +26,49 @@ export interface DialogOpenFileRequest {
   filters?: Array<{ name: string; extensions: string[] }>
 }
 export type DialogOpenFileResponse = IpcResult<string | null>
+
+// fs:read-workspace — scan workspace, returns app entries
+export interface FsReadWorkspaceRequest {
+  workspacePath: string
+}
+export type FsReadWorkspaceResponse = IpcResult<AppEntry[]>
+
+// fs:read-app-config — read a single app's config
+export interface FsReadAppConfigRequest {
+  appPath: string
+}
+export type FsReadAppConfigResponse = IpcResult<AppConfig>
+
+// fs:create-directory — create a directory recursively
+export interface FsCreateDirectoryRequest {
+  dirPath: string
+}
+export type FsCreateDirectoryResponse = IpcResult<void>
+
+// fs:write-json-file — write JSON data to a file
+export interface FsWriteJsonFileRequest {
+  filePath: string
+  data: unknown
+}
+export type FsWriteJsonFileResponse = IpcResult<void>
+
+// fs:copy-image — copy an image file
+export interface FsCopyImageRequest {
+  src: string
+  dest: string
+}
+export type FsCopyImageResponse = IpcResult<void>
+
+// fs:delete-to-trash — move item to OS trash
+export interface FsDeleteToTrashRequest {
+  itemPath: string
+}
+export type FsDeleteToTrashResponse = IpcResult<void>
+
+// fs:create-app — atomic app creation (dir + configs + icon)
+export interface FsCreateAppRequest {
+  workspacePath: string
+  appName: string
+  packageName: string
+}
+export type FsCreateAppResponse = IpcResult<AppEntry>

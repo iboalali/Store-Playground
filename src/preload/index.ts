@@ -4,7 +4,14 @@ import {
   SETTINGS_GET,
   SETTINGS_SET,
   DIALOG_OPEN_DIRECTORY,
-  DIALOG_OPEN_FILE
+  DIALOG_OPEN_FILE,
+  FS_READ_WORKSPACE,
+  FS_READ_APP_CONFIG,
+  FS_CREATE_DIRECTORY,
+  FS_WRITE_JSON_FILE,
+  FS_COPY_IMAGE,
+  FS_DELETE_TO_TRASH,
+  FS_CREATE_APP
 } from '$shared/types/ipc-channels'
 
 contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -23,5 +30,21 @@ contextBridge.exposeInMainWorld('api', {
       defaultPath?: string
       filters?: Array<{ name: string; extensions: string[] }>
     }
-  ) => ipcRenderer.invoke(DIALOG_OPEN_FILE, args)
+  ) => ipcRenderer.invoke(DIALOG_OPEN_FILE, args),
+
+  // Filesystem
+  readWorkspace: (args: { workspacePath: string }) =>
+    ipcRenderer.invoke(FS_READ_WORKSPACE, args),
+  readAppConfig: (args: { appPath: string }) =>
+    ipcRenderer.invoke(FS_READ_APP_CONFIG, args),
+  createDirectory: (args: { dirPath: string }) =>
+    ipcRenderer.invoke(FS_CREATE_DIRECTORY, args),
+  writeJsonFile: (args: { filePath: string; data: unknown }) =>
+    ipcRenderer.invoke(FS_WRITE_JSON_FILE, args),
+  copyImage: (args: { src: string; dest: string }) =>
+    ipcRenderer.invoke(FS_COPY_IMAGE, args),
+  deleteToTrash: (args: { itemPath: string }) =>
+    ipcRenderer.invoke(FS_DELETE_TO_TRASH, args),
+  createApp: (args: { workspacePath: string; appName: string; packageName: string }) =>
+    ipcRenderer.invoke(FS_CREATE_APP, args)
 })

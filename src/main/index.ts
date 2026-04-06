@@ -3,6 +3,7 @@ import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { SettingsService } from './services/settings'
 import { registerSettingsHandlers, registerDialogHandlers } from './ipc/settings-handlers'
+import { registerFsHandlers } from './ipc/fs-handlers'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -41,6 +42,7 @@ app.whenReady().then(() => {
   // Register IPC handlers before window creation
   registerSettingsHandlers(settingsService)
   registerDialogHandlers()
+  registerFsHandlers()
 
   createWindow()
 

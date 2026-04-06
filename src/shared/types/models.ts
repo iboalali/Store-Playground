@@ -28,3 +28,10 @@ export interface VersionMetadata {
   status: VersionStatus
   customNotes: string
 }
+
+// Returned by readWorkspace — combines config with its filesystem location
+export interface AppEntry {
+  appPath: string
+  config: AppConfig
+  hasIcon: boolean
+}
