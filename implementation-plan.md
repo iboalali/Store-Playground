@@ -16,7 +16,8 @@ Store-Playground/
 │   ├── main/                              # Electron main process
 │   │   ├── index.ts                       # Entry: window creation, IPC init, service init
 │   │   ├── ipc/
-│   │   │   ├── fs-handlers.ts             # fs:* IPC channels (14 handlers)
+│   │   │   ├── fs-handlers.ts             # fs:* IPC channels (17 handlers)
+│   │   │   ├── screenshot-handlers.ts     # screenshots:* IPC channels (1 handler)
 │   │   │   ├── api-handlers.ts            # api:* channels (3 handlers)
 │   │   │   ├── settings-handlers.ts       # settings:* channels (2 handlers)
 │   │   │   └── watcher-handlers.ts        # Watcher event forwarding to renderer
@@ -39,7 +40,7 @@ Store-Playground/
 │   │
 │   ├── shared/                            # Cross-process type contracts
 │   │   └── types/
-│   │       ├── models.ts                  # AppConfig, AppDetails, VersionMetadata, etc.
+│   │       ├── models.ts                  # AppConfig, AppDetails, VersionMetadata, ScreenshotConfig, ScreenMeta, etc.
 │   │       ├── ipc-channels.ts            # String literal unions for all channel names
 │   │       └── ipc-payloads.ts            # Request/response types per channel + IpcResult<T>
 │   │
@@ -56,12 +57,14 @@ Store-Playground/
 │           │   ├── app-state.svelte.ts    # Workspace apps list
 │           │   ├── current-app.svelte.ts  # Selected app + versions
 │           │   ├── editor.svelte.ts       # Active listing: locales, texts, images, dirty flags
+│           │   ├── screenshot-manager.svelte.ts  # Screenshot versions, screens, variants, drag, undo
 │           │   ├── settings.svelte.ts     # Settings mirror
 │           │   └── progress.svelte.ts     # Publish/import progress + errors
 │           ├── screens/
 │           │   ├── HomeGrid.svelte
 │           │   ├── AppDashboard.svelte
 │           │   ├── StoreListingEditor.svelte
+│           │   ├── ScreenshotManager.svelte   # Screenshot library management
 │           │   └── Settings.svelte
 │           ├── components/
 │           │   ├── layout/
@@ -80,7 +83,16 @@ Store-Playground/
 │           │   │   ├── ImageGrid.svelte
 │           │   │   ├── ImageSlot.svelte   # Single image with drop + picker + delete
 │           │   │   ├── ScreenshotSection.svelte
+│           │   │   ├── ScreenshotPicker.svelte  # Modal to pick from screenshot library
 │           │   │   └── LocaleSelector.svelte  # Searchable dropdown for 77 locales
+│           │   ├── screenshots/
+│           │   │   ├── VersionSelector.svelte   # Dropdown for switching screenshot versions
+│           │   │   ├── VersionActions.svelte     # Add/Delete/Rename/Duplicate version
+│           │   │   ├── ScreenList.svelte         # Vertical list of screens, drag-reorder
+│           │   │   ├── ScreenRow.svelte          # Screen header + variant grid
+│           │   │   ├── VariantGrid.svelte        # Horizontal grid of variant slots
+│           │   │   ├── VariantSlot.svelte        # Image thumbnail/placeholder, drop zone
+│           │   │   └── DragOverlay.svelte        # Visual overlay during drag operations
 │           │   └── shared/
 │           │       ├── ConfirmDialog.svelte
 │           │       ├── Button.svelte
@@ -199,6 +211,117 @@ State-based, no library. A single `router.svelte.ts` exports a `$state<Route>` w
   - Duplicate Localization: LocaleSelector -> fs:copy-directory
   - Delete Localization: ConfirmDialog -> fs:delete-to-trash
 
+### Phase 5.5: Screenshot Management (Screen 4)
+**Goal:** A dedicated screenshot library page with version/screen/variant management and drag-and-drop
+
+**Data Model — File System Structure:**
+```
+/{app_root}/screenshots/
+├── screenshot_config.json             # Version order + per-version screen order
+├── .undo/                             # Single backup image for undo (at most one file)
+└── /versions/
+    └── /{version_name}/               # e.g., "Initial_Set"
+        └── /{screen_slug}/            # e.g., "login" (kebab-case from display name)
+            ├── _screen.json           # { displayName, variantOrder, variantNames }
+            ├── light-mode.png         # Variant image (slug from variant name)
+            └── dark-mode.png
+```
+
+**Config schemas:**
+
+`screenshot_config.json`:
+```json
+{
+  "versionOrder": ["Holiday_Update", "Initial_Set"],
+  "versions": {
+    "Initial_Set": {
+      "createdAt": "2026-04-01T10:00:00Z",
+      "screenOrder": ["login", "home", "settings"]
+    }
+  }
+}
+```
+
+`_screen.json` (per screen directory):
+```json
+{
+  "displayName": "Login",
+  "variantOrder": ["light-mode", "dark-mode", "spanish"],
+  "variantNames": {
+    "light-mode": "Light Mode",
+    "dark-mode": "Dark Mode",
+    "spanish": "Spanish"
+  }
+}
+```
+
+**Shared Types — add to `src/shared/types/models.ts`:**
+- `ScreenshotConfig` — versionOrder, versions map (createdAt, screenOrder)
+- `ScreenMeta` — displayName, variantOrder, variantNames map
+- `ScreenData` — slug, displayName, variants array
+- `VariantData` — slug, displayName, hasImage, imagePath
+
+**New IPC channels:**
+- `fs:rename-directory` — rename a directory (`fs.renameSync`)
+- `fs:move-file` — move a file between locations (`fs.renameSync`)
+- `fs:read-json-file` — generic JSON file reader
+- `screenshots:list-screens` — composite read: returns all screens with variants and image paths for a version
+
+**New IPC handler file:** `src/main/ipc/screenshot-handlers.ts` for `screenshots:list-screens`; the `fs:*` channels go in existing `fs-handlers.ts`.
+
+**Route — add to `router.svelte.ts`:**
+```typescript
+| { screen: 'screenshots'; appPath: string }
+```
+5 screens total. Breadcrumb: Home > App Name > Screenshot Manager.
+
+**Store — create `src/renderer/src/stores/screenshot-manager.svelte.ts`:**
+- State: config, currentVersionName, screens array, dragSource, undoAction
+- Methods: version CRUD (add copies latest, duplicate copies current), screen CRUD (add/delete/rename/reorder), variant CRUD (add/delete/rename/reorder), image set/move/clear, undo
+- Undo: stores one reversible action; old image backed up to `screenshots/.undo/`; cleared on each new action
+
+**Components — build bottom-up:**
+1. `VariantSlot.svelte` — image thumbnail or empty placeholder; supports file picker, external drag-and-drop, inter-slot drag, delete/clear
+2. `VariantGrid.svelte` — horizontal row of VariantSlots + "Add Variant" button; supports drag-reorder of variants
+3. `ScreenRow.svelte` — screen display name header with rename/delete actions + drag handle + VariantGrid
+4. `ScreenList.svelte` — vertical list of ScreenRows; supports drag-reorder of screens
+5. `VersionSelector.svelte` — dropdown showing all screenshot versions (latest first)
+6. `VersionActions.svelte` — Add (copies latest), Duplicate This, Delete, Rename buttons
+7. `DragOverlay.svelte` — semi-transparent thumbnail following cursor during drag
+8. `ScreenshotManager.svelte` — top-level screen: VersionSelector + VersionActions at top, ScreenList below, floating undo button
+
+**Drag and drop — HTML5 DnD API (no library):**
+- External file drop onto VariantSlot: `event.dataTransfer.files[0]` → validate → `fs:copy-image` → old image saved to `.undo/`
+- Inter-slot drag (within or across screens): `draggable="true"` on slots with images; on drop, `fs:move-file` to move/swap images
+- Reorder screens: drag handles on ScreenRow; updates `screenOrder` in `screenshot_config.json` (metadata only, no files moved)
+- Reorder variants: drag handles on VariantSlot labels; updates `variantOrder` in `_screen.json` (metadata only)
+
+**"Add Variant" language integration:**
+- Dialog offers: (1) languages from app's listing (reads locale dirs from `liveVersionDir`, shown first), (2) full 77-locale list below, (3) custom name free text input
+- Uses existing `locale-names.ts` for human-readable names
+
+**Screenshot version management:**
+- Not tied to APK or listing versions — independent naming
+- "New Version" copies the latest version as starting point
+- "Duplicate This Version" copies the currently viewed version
+- Versions can be renamed and deleted
+
+**Undo:**
+- Single-level only (latest change)
+- Floating undo button appears when an undo action is available
+- Covers: image replacement, image move/swap, image deletion
+- Does NOT cover structural changes (screen/variant/version add/delete)
+
+**ScreenshotPicker integration (in Store Listing Editor):**
+- Add `ScreenshotPicker.svelte` modal to `src/renderer/src/components/editor/`
+- Add "Pick from Library" button in `ScreenshotSection.svelte` alongside existing file picker
+- Picker shows latest screenshot version by default, with dropdown for older versions
+- Screens displayed as collapsible sections, variants as thumbnail grid
+- Clicking a thumbnail closes the modal; the selected image is **appended** to the listing's screenshot list as the next numbered file (e.g., `03_picked.png`) via existing `fs:copy-image`
+
+**Navigation:**
+- "Screenshot Manager" button on `AppDashboard.svelte` navigates to `{ screen: 'screenshots', appPath }`
+
 ### Phase 6: Validation Engine
 **Goal:** Pre-flight validation gating the Publish button
 
@@ -254,9 +377,13 @@ End-to-end verification after Phase 8:
 1. Launch app -> Settings -> set workspace path -> Home Grid shows apps
 2. Add App -> appears in grid -> click -> Dashboard loads
 3. Create/Duplicate/Rename/Archive/Delete versions
-4. Open Editor -> edit text -> see char counts -> add/reorder/delete images
-5. Add/Duplicate/Delete localizations
-6. (With service account) Import live data, Publish with progress
-7. Edit a .txt file externally -> UI auto-refreshes
-8. Keyboard shortcuts and menu bar all functional
-9. Package with electron-builder -> built app launches correctly
+4. Dashboard -> Screenshot Manager -> create first version -> add screens -> add variants -> add images
+5. Drag screenshots between variants and screens -> undo works
+6. Create new screenshot version (copies latest) -> switch between versions
+7. Open Editor -> edit text -> see char counts -> add/reorder/delete images
+8. Editor -> "Pick from Library" -> pick screenshot from library -> appended to list
+9. Add/Duplicate/Delete localizations
+10. (With service account) Import live data, Publish with progress
+11. Edit a .txt file externally -> UI auto-refreshes
+12. Keyboard shortcuts and menu bar all functional
+13. Package with electron-builder -> built app launches correctly

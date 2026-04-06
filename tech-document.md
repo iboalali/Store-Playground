@@ -41,6 +41,12 @@ Channels are grouped by domain. All calls from the Renderer use `ipcRenderer.inv
 * `fs:copy-image` — Copy an external image into the workspace (`fs.copyFileSync`)
 * `fs:rename-files` — Batch-rename screenshot files for reordering
 * `fs:list-images` — List images in a screenshot directory
+* `fs:rename-directory` — Rename a directory (`fs.renameSync`)
+* `fs:move-file` — Move a file between locations (`fs.renameSync`, same filesystem)
+* `fs:read-json-file` — Read and parse any JSON file in the workspace
+
+**Screenshot Management (Renderer → Main):**
+* `screenshots:list-screens` — Composite read: returns all screens with their variants and image paths for a given screenshot version directory
 
 **Google Play API (Renderer → Main):**
 * `api:publish` — Execute the full publish transaction flow
@@ -88,7 +94,16 @@ The application reads and writes exclusively to a designated `Workspace` directo
     │           ├── /tablet_10                       <- API type: tenInchScreenshots
     │           ├── /tv                              <- API type: tvScreenshots
     │           └── /wear                            <- API type: wearScreenshots
-    └── /v1.1_Holiday                                <- Current/Live Version Directory
+    ├── /v1.1_Holiday                                <- Current/Live Version Directory
+    └── /screenshots                                 <- Screenshot Management Root
+        ├── screenshot_config.json                   <- Version order + screen order per version
+        ├── .undo/                                   <- Single backup image for undo
+        └── /versions
+            └── /Initial_Set                         <- Screenshot Version Directory
+                └── /login                           <- Screen Directory (kebab-case slug)
+                    ├── _screen.json                 <- Screen metadata + variant definitions
+                    ├── light-mode.png               <- Variant image (slug.ext)
+                    └── dark-mode.png
 ```
 
 ## 5. Data Models (JSON Schemas)
@@ -136,6 +151,47 @@ Located inside each Version Directory. Controls chronological sorting, tracks pu
 * `draft` — Default on creation or duplication. Indicates the listing has not been published.
 * `published` — Set automatically after a successful publish to Google Play.
 * `archived` — Set manually by the user. Hides the version from the main Dashboard view (accessible via a "Show Archived" toggle).
+
+### 5.4 `screenshot_config.json`
+
+Located at `{app_root}/screenshots/`. Manages the screenshot library's version hierarchy.
+```
+{
+  "versionOrder": ["Holiday_Update", "Initial_Set"],
+  "versions": {
+    "Initial_Set": {
+      "createdAt": "2026-04-01T10:00:00Z",
+      "screenOrder": ["login", "home", "settings"]
+    },
+    "Holiday_Update": {
+      "createdAt": "2026-04-05T14:00:00Z",
+      "screenOrder": ["login", "home", "settings", "checkout"]
+    }
+  }
+}
+```
+
+* `versionOrder` defines display order (first entry is "latest"). Updated when versions are added, deleted, or reordered.
+* `versions[name].screenOrder` lists screen directory slugs in display order for that version.
+
+### 5.5 `_screen.json`
+
+Located inside each screen directory under a screenshot version. Defines the screen's display name and its variant layout.
+```
+{
+  "displayName": "Login",
+  "variantOrder": ["light-mode", "dark-mode", "spanish"],
+  "variantNames": {
+    "light-mode": "Light Mode",
+    "dark-mode": "Dark Mode",
+    "spanish": "Spanish"
+  }
+}
+```
+
+* `variantOrder` lists variant slugs in left-to-right display order.
+* `variantNames` maps slugs to human-readable display names.
+* Variant images are stored as `{slug}.{png|jpg|jpeg}` in the same directory as `_screen.json`.
 
 ## 6. UI/UX Architecture & Data Flow
 
@@ -186,6 +242,67 @@ Located inside each Version Directory. Controls chronological sorting, tracks pu
   * Adding an image (via either method) triggers validation, then `fs.copyFileSync()` into the workspace.
   * Reordering in the UI physically renames the files in the directory (e.g., `01_...`, `02_...`).
   * Individual images can be deleted via a delete button on each image thumbnail (confirmation dialog, then moved to OS trash).
+* **Pick from Screenshot Library:**
+  * A "Pick from Library" button is available in each screenshot section (phone, tablet, etc.), alongside the existing file picker.
+  * Clicking it opens the `ScreenshotPicker` modal, which displays the app's screenshot library organized by version > screen > variant.
+  * The latest screenshot version is shown by default, with a dropdown to select older versions.
+  * Screens are displayed as collapsible sections; variants are shown as a thumbnail grid.
+  * Clicking a thumbnail closes the modal and **appends** the selected image to the end of the screenshot list as the next numbered file (e.g., `03_picked.png`) via `fs:copy-image`.
+
+### Screen 4: Screenshot Manager
+
+* **Access:** A "Screenshot Manager" button on the App Dashboard navigates to this page. Breadcrumb: Home > App Name > Screenshot Manager.
+* **Purpose:** A dedicated screenshot library for managing app screenshots organized by screens and variants, independent of the per-locale/per-device structure used in the Store Listing Editor.
+
+#### Screenshot Versions
+
+Screenshot versions are **not tied to APK versions or listing versions** — they have independent naming and lifecycle.
+
+* **Layout:** A version selector dropdown at the top of the page shows all screenshot versions. The first entry in `versionOrder` is the "latest" and is shown by default.
+* **Action (New Version):** Copies the latest version (entire directory tree) as a starting point. Prompts for a name. Inserts at the front of `versionOrder`.
+* **Action (Duplicate This Version):** Available on any version (including older ones). Copies the currently viewed version as a starting point for a new version. Prompts for a name.
+* **Action (Rename Version):** Renames the version directory via `fs:rename-directory`. Updates `versionOrder` and `versions` key in `screenshot_config.json`.
+* **Action (Delete Version):** Moves the version directory to OS trash. Removes from `screenshot_config.json`. Confirmation dialog required.
+
+#### Screens
+
+Screens represent app screens (e.g., "Login", "Home", "Settings"). They are displayed as a **vertical list**.
+
+* **Action (Add Screen):** Prompts for a display name. Creates a new directory (kebab-case slug) with an empty `_screen.json`. Appends slug to `screenOrder`.
+* **Action (Delete Screen):** Moves screen directory to OS trash. Removes from `screenOrder`. Confirmation dialog required.
+* **Action (Rename Screen):** Inline edit of display name. Updates `_screen.json -> displayName`. The directory slug remains unchanged.
+* **Action (Reorder Screens):** Drag handles on each screen row. Dragging reorders the `screenOrder` array in `screenshot_config.json` (metadata only — no files moved).
+
+#### Variants
+
+Variants represent variations of a screen (e.g., "Dark Mode", "Light Mode", "Spanish"). They are displayed as a **horizontal grid** under each screen.
+
+* **Layout:** Each variant is a slot showing either an image thumbnail or an empty placeholder, with the variant name label below.
+* **Action (Add Variant):** Opens a dialog with three input modes:
+  1. **From app languages (shown first):** Reads locale directories from the app's `liveVersionDir` and lists them with human-readable names from `locale-names.ts`.
+  2. **All 77 locales:** The full hardcoded Google Play locale list, displayed below the app-specific languages.
+  3. **Custom name:** Free text input for non-language variants (e.g., "Dark Mode", "Landscape").
+* **Action (Delete Variant):** Removes the variant image file (if present) and its entry from `_screen.json`. Confirmation dialog required.
+* **Action (Rename Variant):** Inline edit. Updates `variantNames` in `_screen.json`. If an image exists, renames the file to match the new slug.
+* **Action (Reorder Variants):** Drag handles on variant labels. Dragging reorders the `variantOrder` array in `_screen.json` (metadata only).
+
+#### Screenshot Management (Images)
+
+Each variant holds exactly one screenshot (or is empty).
+
+* **Adding a screenshot:** Two methods per variant slot:
+  1. **File picker button** — standard file dialog.
+  2. **Drag-and-drop from external** — drop an image file onto the slot.
+  * If the variant already has an image, the old image is **replaced** (the old file is backed up to `screenshots/.undo/` for undo).
+* **Moving screenshots between variants/screens:** Screenshots (not variants) can be dragged from one `VariantSlot` to another — within the same screen or across different screens.
+  * If the target slot is empty, the image moves there.
+  * If the target slot has an image, the two images are **swapped**.
+  * Implemented via `fs:move-file` (using a temp file for swaps).
+* **Undo:** A floating undo button appears when a reversible action is available. Only the **latest** change can be undone. Covers: image replacement, image move/swap, image deletion. Does NOT cover structural changes (screen/variant/version add/delete/rename). The backup is stored in `screenshots/.undo/` (at most one file, cleared on each new action).
+
+#### Empty State
+
+When an app has no `screenshots/` directory yet, the page shows a welcome message with a "Create First Screenshot Version" button. This creates the `screenshots/` directory, `screenshot_config.json`, and a first empty version.
 
 ## 7. Pre-Flight Validation Engine
 
