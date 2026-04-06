@@ -9,7 +9,11 @@ import {
   FS_WRITE_JSON_FILE,
   FS_COPY_IMAGE,
   FS_DELETE_TO_TRASH,
-  FS_CREATE_APP
+  FS_CREATE_APP,
+  FS_READ_APP_DETAILS,
+  FS_LIST_VERSIONS,
+  FS_COPY_DIRECTORY,
+  FS_RENAME_ITEM
 } from '$shared/types/ipc-channels'
 import type {
   FsReadWorkspaceRequest,
@@ -19,9 +23,13 @@ import type {
   FsCopyImageRequest,
   FsDeleteToTrashRequest,
   FsCreateAppRequest,
+  FsReadAppDetailsRequest,
+  FsListVersionsRequest,
+  FsCopyDirectoryRequest,
+  FsRenameItemRequest,
   IpcResult
 } from '$shared/types/ipc-payloads'
-import type { AppEntry, AppConfig, AppDetails } from '$shared/types/models'
+import type { AppEntry, AppConfig, AppDetails, VersionEntry } from '$shared/types/models'
 import * as filesystem from '../services/filesystem'
 
 function getDefaultIconPath(): string {
@@ -149,6 +157,59 @@ export function registerFsHandlers(): void {
         }
 
         return { success: true, data: { appPath, config, hasIcon } }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_READ_APP_DETAILS,
+    async (_event, args: FsReadAppDetailsRequest): Promise<IpcResult<AppDetails>> => {
+      try {
+        const details = await filesystem.readAppDetails(args.appPath)
+        return { success: true, data: details }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_LIST_VERSIONS,
+    async (_event, args: FsListVersionsRequest): Promise<IpcResult<VersionEntry[]>> => {
+      try {
+        const config = await filesystem.readAppConfig(args.appPath)
+        const rawVersions = await filesystem.listVersions(args.appPath)
+        const versions: VersionEntry[] = rawVersions.map((v) => ({
+          ...v,
+          isLive: v.dirName === config.liveVersionDir
+        }))
+        return { success: true, data: versions }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_COPY_DIRECTORY,
+    async (_event, args: FsCopyDirectoryRequest): Promise<IpcResult<void>> => {
+      try {
+        await filesystem.copyDirectory(args.src, args.dest)
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_RENAME_ITEM,
+    async (_event, args: FsRenameItemRequest): Promise<IpcResult<void>> => {
+      try {
+        await filesystem.renameItem(args.oldPath, args.newPath)
+        return { success: true, data: undefined }
       } catch (err) {
         return { success: false, error: String(err) }
       }

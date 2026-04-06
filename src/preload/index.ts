@@ -11,7 +11,11 @@ import {
   FS_WRITE_JSON_FILE,
   FS_COPY_IMAGE,
   FS_DELETE_TO_TRASH,
-  FS_CREATE_APP
+  FS_CREATE_APP,
+  FS_READ_APP_DETAILS,
+  FS_LIST_VERSIONS,
+  FS_COPY_DIRECTORY,
+  FS_RENAME_ITEM
 } from '$shared/types/ipc-channels'
 
 contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -46,5 +50,13 @@ contextBridge.exposeInMainWorld('api', {
   deleteToTrash: (args: { itemPath: string }) =>
     ipcRenderer.invoke(FS_DELETE_TO_TRASH, args),
   createApp: (args: { workspacePath: string; appName: string; packageName: string }) =>
-    ipcRenderer.invoke(FS_CREATE_APP, args)
+    ipcRenderer.invoke(FS_CREATE_APP, args),
+  readAppDetails: (args: { appPath: string }) =>
+    ipcRenderer.invoke(FS_READ_APP_DETAILS, args),
+  listVersions: (args: { appPath: string }) =>
+    ipcRenderer.invoke(FS_LIST_VERSIONS, args),
+  copyDirectory: (args: { src: string; dest: string }) =>
+    ipcRenderer.invoke(FS_COPY_DIRECTORY, args),
+  renameItem: (args: { oldPath: string; newPath: string }) =>
+    ipcRenderer.invoke(FS_RENAME_ITEM, args)
 })

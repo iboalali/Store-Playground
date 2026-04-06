@@ -35,3 +35,11 @@ export interface AppEntry {
   config: AppConfig
   hasIcon: boolean
 }
+
+// Returned by listVersions — a version directory with its metadata
+export interface VersionEntry {
+  dirName: string
+  dirPath: string
+  metadata: VersionMetadata
+  isLive: boolean
+}

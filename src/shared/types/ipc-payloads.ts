@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppEntry } from './models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -72,3 +72,29 @@ export interface FsCreateAppRequest {
   packageName: string
 }
 export type FsCreateAppResponse = IpcResult<AppEntry>
+
+// fs:read-app-details — read app_details.json
+export interface FsReadAppDetailsRequest {
+  appPath: string
+}
+export type FsReadAppDetailsResponse = IpcResult<AppDetails>
+
+// fs:list-versions — scan app dir for version subdirectories
+export interface FsListVersionsRequest {
+  appPath: string
+}
+export type FsListVersionsResponse = IpcResult<VersionEntry[]>
+
+// fs:copy-directory — recursive directory copy
+export interface FsCopyDirectoryRequest {
+  src: string
+  dest: string
+}
+export type FsCopyDirectoryResponse = IpcResult<void>
+
+// fs:rename-item — rename a file or directory
+export interface FsRenameItemRequest {
+  oldPath: string
+  newPath: string
+}
+export type FsRenameItemResponse = IpcResult<void>
