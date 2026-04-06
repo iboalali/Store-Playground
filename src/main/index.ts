@@ -1,6 +1,8 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { SettingsService } from './services/settings'
+import { registerSettingsHandlers, registerDialogHandlers } from './ipc/settings-handlers'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -33,6 +35,13 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Initialize services
+  const settingsService = new SettingsService(app.getPath('userData'))
+
+  // Register IPC handlers before window creation
+  registerSettingsHandlers(settingsService)
+  registerDialogHandlers()
+
   createWindow()
 
   app.on('activate', () => {
