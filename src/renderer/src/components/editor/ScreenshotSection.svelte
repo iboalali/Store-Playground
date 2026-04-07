@@ -11,9 +11,10 @@
     onpaste: (base64Data: string) => void
     ondelete: (fileName: string) => void
     onreorder: (orderedFileNames: string[]) => void
+    onpickfromlibrary?: () => void
   }
 
-  let { group, typeLabel, maxCount, imageTimestamp, onadd, onpaste, ondelete, onreorder }: Props = $props()
+  let { group, typeLabel, maxCount, imageTimestamp, onadd, onpaste, ondelete, onreorder, onpickfromlibrary }: Props = $props()
 
   let dragSourceIdx = $state<number | null>(null)
   let dragOverIdx = $state<number | null>(null)
@@ -125,6 +126,13 @@
       <button class="add-btn" onclick={handleAdd}>
         <span class="add-icon">+</span>
         <span class="add-text">Add</span>
+      </button>
+    {/if}
+
+    {#if onpickfromlibrary}
+      <button class="add-btn library-btn" onclick={onpickfromlibrary}>
+        <span class="add-icon">&#128247;</span>
+        <span class="add-text">Library</span>
       </button>
     {/if}
   </div>
@@ -259,6 +267,11 @@
   .add-btn:hover {
     border-color: #0066cc;
     color: #0066cc;
+  }
+
+  .library-btn {
+    border-color: #c8d8e8;
+    background: #f8fbff;
   }
 
   .add-icon {

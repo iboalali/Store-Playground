@@ -7,6 +7,7 @@
   import HomeGrid from './screens/HomeGrid.svelte'
   import AppDashboard from './screens/AppDashboard.svelte'
   import StoreListingEditor from './screens/StoreListingEditor.svelte'
+  import ScreenshotManager from './screens/ScreenshotManager.svelte'
 
   let initialized = $state(false)
 
@@ -39,9 +40,7 @@
   {:else if route.screen === 'editor'}
     <StoreListingEditor />
   {:else if route.screen === 'screenshots'}
-    <main class="placeholder">
-      <p>Screenshot Manager (Phase 5.5)</p>
-    </main>
+    <ScreenshotManager />
   {:else if route.screen === 'reports'}
     <main class="placeholder">
       <p>Financial Reports (Phase 9)</p>

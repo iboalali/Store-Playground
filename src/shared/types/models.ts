@@ -70,3 +70,36 @@ export interface DirectoryEntry {
   name: string
   isDirectory: boolean
 }
+
+// --- Phase 5.5: Screenshot Manager types ---
+
+export interface ScreenshotConfig {
+  versionOrder: string[]
+  versions: Record<string, { createdAt: string; screenOrder: string[] }>
+}
+
+export interface ScreenMeta {
+  displayName: string
+  variantOrder: string[]
+  variantNames: Record<string, string>
+}
+
+export interface VariantData {
+  slug: string
+  displayName: string
+  filePath: string
+  hasImage: boolean
+}
+
+export interface ScreenData {
+  slug: string
+  displayName: string
+  dirPath: string
+  variants: VariantData[]
+}
+
+export interface VersionData {
+  name: string
+  createdAt: string
+  screens: ScreenData[]
+}
