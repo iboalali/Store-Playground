@@ -43,3 +43,30 @@ export interface VersionEntry {
   metadata: VersionMetadata
   isLive: boolean
 }
+
+// --- Phase 5: Store Listing Editor types ---
+
+export type ScreenshotType = 'phone' | 'tablet_7' | 'tablet_10' | 'tv' | 'wear'
+
+export interface LocaleTextFields {
+  title: string
+  shortDescription: string
+  fullDescription: string
+  videoUrl: string
+}
+
+export interface ScreenshotEntry {
+  fileName: string
+  filePath: string
+}
+
+export interface ScreenshotGroup {
+  type: ScreenshotType
+  dirPath: string
+  screenshots: ScreenshotEntry[]
+}
+
+export interface DirectoryEntry {
+  name: string
+  isDirectory: boolean
+}

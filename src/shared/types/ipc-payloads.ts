@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry } from './models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -98,3 +98,35 @@ export interface FsRenameItemRequest {
   newPath: string
 }
 export type FsRenameItemResponse = IpcResult<void>
+
+// fs:read-text-file — read a text file's content
+export interface FsReadTextFileRequest {
+  filePath: string
+}
+export type FsReadTextFileResponse = IpcResult<string>
+
+// fs:write-text-file — write text content to a file
+export interface FsWriteTextFileRequest {
+  filePath: string
+  content: string
+}
+export type FsWriteTextFileResponse = IpcResult<void>
+
+// fs:list-directory — list files/dirs in a directory
+export interface FsListDirectoryRequest {
+  dirPath: string
+}
+export type FsListDirectoryResponse = IpcResult<DirectoryEntry[]>
+
+// fs:read-json-file — generic JSON file reader
+export interface FsReadJsonFileRequest {
+  filePath: string
+}
+export type FsReadJsonFileResponse = IpcResult<unknown>
+
+// fs:write-image-data — write base64 image data to disk (clipboard paste)
+export interface FsWriteImageDataRequest {
+  destPath: string
+  base64Data: string
+}
+export type FsWriteImageDataResponse = IpcResult<void>

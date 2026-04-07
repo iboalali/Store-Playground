@@ -13,7 +13,12 @@ import {
   FS_READ_APP_DETAILS,
   FS_LIST_VERSIONS,
   FS_COPY_DIRECTORY,
-  FS_RENAME_ITEM
+  FS_RENAME_ITEM,
+  FS_READ_TEXT_FILE,
+  FS_WRITE_TEXT_FILE,
+  FS_LIST_DIRECTORY,
+  FS_READ_JSON_FILE,
+  FS_WRITE_IMAGE_DATA
 } from '$shared/types/ipc-channels'
 import type {
   FsReadWorkspaceRequest,
@@ -27,9 +32,14 @@ import type {
   FsListVersionsRequest,
   FsCopyDirectoryRequest,
   FsRenameItemRequest,
+  FsReadTextFileRequest,
+  FsWriteTextFileRequest,
+  FsListDirectoryRequest,
+  FsReadJsonFileRequest,
+  FsWriteImageDataRequest,
   IpcResult
 } from '$shared/types/ipc-payloads'
-import type { AppEntry, AppConfig, AppDetails, VersionEntry } from '$shared/types/models'
+import type { AppEntry, AppConfig, AppDetails, VersionEntry, DirectoryEntry } from '$shared/types/models'
 import * as filesystem from '../services/filesystem'
 
 function getDefaultIconPath(): string {
@@ -209,6 +219,66 @@ export function registerFsHandlers(): void {
     async (_event, args: FsRenameItemRequest): Promise<IpcResult<void>> => {
       try {
         await filesystem.renameItem(args.oldPath, args.newPath)
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_READ_TEXT_FILE,
+    async (_event, args: FsReadTextFileRequest): Promise<IpcResult<string>> => {
+      try {
+        const content = await filesystem.readTextFile(args.filePath)
+        return { success: true, data: content }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_WRITE_TEXT_FILE,
+    async (_event, args: FsWriteTextFileRequest): Promise<IpcResult<void>> => {
+      try {
+        await filesystem.writeTextFile(args.filePath, args.content)
+        return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_LIST_DIRECTORY,
+    async (_event, args: FsListDirectoryRequest): Promise<IpcResult<DirectoryEntry[]>> => {
+      try {
+        const entries = await filesystem.listDirectory(args.dirPath)
+        return { success: true, data: entries }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_READ_JSON_FILE,
+    async (_event, args: FsReadJsonFileRequest): Promise<IpcResult<unknown>> => {
+      try {
+        const data = await filesystem.readJsonFile(args.filePath)
+        return { success: true, data }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    FS_WRITE_IMAGE_DATA,
+    async (_event, args: FsWriteImageDataRequest): Promise<IpcResult<void>> => {
+      try {
+        await filesystem.writeImageData(args.destPath, args.base64Data)
         return { success: true, data: undefined }
       } catch (err) {
         return { success: false, error: String(err) }

@@ -83,6 +83,29 @@ export async function writeTextFile(filePath: string, content: string): Promise<
   await writeFile(filePath, content, 'utf-8')
 }
 
+export async function readTextFile(filePath: string): Promise<string> {
+  return await readFile(filePath, 'utf-8')
+}
+
+export async function listDirectory(
+  dirPath: string
+): Promise<{ name: string; isDirectory: boolean }[]> {
+  const entries = await readdir(dirPath, { withFileTypes: true })
+  return entries.map((entry) => ({
+    name: entry.name,
+    isDirectory: entry.isDirectory()
+  }))
+}
+
+export async function readJsonFile(filePath: string): Promise<unknown> {
+  const raw = await readFile(filePath, 'utf-8')
+  return JSON.parse(raw)
+}
+
+export async function writeImageData(destPath: string, base64Data: string): Promise<void> {
+  await writeFile(destPath, Buffer.from(base64Data, 'base64'))
+}
+
 async function fileExists(path: string): Promise<boolean> {
   try {
     await access(path)
