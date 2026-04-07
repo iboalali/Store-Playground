@@ -21,7 +21,10 @@ import {
   FS_LIST_DIRECTORY,
   FS_READ_JSON_FILE,
   FS_WRITE_IMAGE_DATA,
-  VALIDATION_VALIDATE_VERSION
+  VALIDATION_VALIDATE_VERSION,
+  API_PUBLISH,
+  API_IMPORT_LIVE,
+  API_PROGRESS
 } from '$shared/types/ipc-channels'
 
 contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -78,5 +81,26 @@ contextBridge.exposeInMainWorld('api', {
 
   // Validation
   validateVersion: (args: { versionDir: string }) =>
-    ipcRenderer.invoke(VALIDATION_VALIDATE_VERSION, args)
+    ipcRenderer.invoke(VALIDATION_VALIDATE_VERSION, args),
+
+  // API
+  publish: (args: {
+    packageName: string
+    serviceAccountKeyPath: string
+    versionDir: string
+    appPath: string
+  }) => ipcRenderer.invoke(API_PUBLISH, args),
+  importLive: (args: {
+    packageName: string
+    serviceAccountKeyPath: string
+    targetDir: string
+    mode: string
+  }) => ipcRenderer.invoke(API_IMPORT_LIVE, args),
+  onApiProgress: (callback: (...args: unknown[]) => void) => {
+    const handler = (_ipcEvent: unknown, data: unknown): void => callback(data)
+    ipcRenderer.on(API_PROGRESS, handler as Parameters<typeof ipcRenderer.on>[1])
+    return (): void => {
+      ipcRenderer.removeListener(API_PROGRESS, handler as Parameters<typeof ipcRenderer.removeListener>[1])
+    }
+  }
 })

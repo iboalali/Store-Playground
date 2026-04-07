@@ -2,15 +2,20 @@
   import { getRoute } from '../router.svelte'
   import { goToScreenshots } from '../router.svelte'
   import { currentAppStore } from '../stores/current-app.svelte'
+  import { settingsStore } from '../stores/settings.svelte'
+  import { progressStore } from '../stores/progress.svelte'
+  import { ipc } from '$lib/ipc'
   import AppDetailsForm from '../components/dashboard/AppDetailsForm.svelte'
   import VersionCard from '../components/dashboard/VersionCard.svelte'
   import ConfirmDialog from '../components/shared/ConfirmDialog.svelte'
+  import ProgressPanel from '../components/shared/ProgressPanel.svelte'
   import type { AppDetails } from '$shared/types/models'
 
   const route = $derived(getRoute())
   const appPath = $derived(route.screen === 'dashboard' ? route.appPath : '')
 
   let showDeleteAppConfirm = $state(false)
+  let showImportConfirm = $state(false)
   let detailsExpanded = $state(true)
 
   $effect(() => {
@@ -31,6 +36,43 @@
     showDeleteAppConfirm = false
     await currentAppStore.deleteApp()
   }
+
+  async function handlePublish(): Promise<void> {
+    const liveVersion = currentAppStore.liveVersion
+    if (!liveVersion || !appPath || !currentAppStore.config || !settingsStore.serviceAccountKeyPath) return
+
+    progressStore.subscribe()
+    try {
+      await ipc.publish({
+        packageName: currentAppStore.config.packageName,
+        serviceAccountKeyPath: settingsStore.serviceAccountKeyPath,
+        versionDir: liveVersion.dirPath,
+        appPath
+      })
+      await currentAppStore.refresh()
+    } catch {
+      // Error is shown in ProgressPanel
+    }
+  }
+
+  async function handleImportOverwrite(): Promise<void> {
+    showImportConfirm = false
+    const liveVersion = currentAppStore.liveVersion
+    if (!liveVersion || !currentAppStore.config || !settingsStore.serviceAccountKeyPath) return
+
+    progressStore.subscribe()
+    try {
+      await ipc.importLive({
+        packageName: currentAppStore.config.packageName,
+        serviceAccountKeyPath: settingsStore.serviceAccountKeyPath,
+        targetDir: liveVersion.dirPath,
+        mode: 'overwrite-version'
+      })
+      await currentAppStore.refresh()
+    } catch {
+      // Error is shown in ProgressPanel
+    }
+  }
 </script>
 
 <main class="dashboard-page">
@@ -45,6 +87,22 @@
         <span class="package-name">{currentAppStore.config.packageName}</span>
       </div>
       <div class="header-actions">
+        <button
+          class="btn btn-primary"
+          onclick={handlePublish}
+          disabled={progressStore.active || !settingsStore.serviceAccountKeyPath || !currentAppStore.liveVersion}
+          title={!settingsStore.serviceAccountKeyPath ? 'Configure service account key in Settings' : !currentAppStore.liveVersion ? 'No live version to publish' : ''}
+        >
+          Publish to Play
+        </button>
+        <button
+          class="btn btn-secondary"
+          onclick={() => (showImportConfirm = true)}
+          disabled={progressStore.active || !settingsStore.serviceAccountKeyPath || !currentAppStore.liveVersion}
+          title={!settingsStore.serviceAccountKeyPath ? 'Configure service account key in Settings' : ''}
+        >
+          Import from Play
+        </button>
         <button class="btn btn-secondary" onclick={() => goToScreenshots(appPath)}>
           Screenshot Manager
         </button>
@@ -53,6 +111,8 @@
         </button>
       </div>
     </div>
+
+    <ProgressPanel />
 
     <!-- App Details Section -->
     <section class="section">
@@ -109,6 +169,16 @@
   confirmDanger={true}
   onconfirm={handleDeleteApp}
   oncancel={() => (showDeleteAppConfirm = false)}
+/>
+
+<ConfirmDialog
+  open={showImportConfirm}
+  title="Import from Google Play"
+  message={`This will overwrite the live version "${currentAppStore.liveVersion?.dirName ?? ''}" with data from Google Play. Are you sure?`}
+  confirmLabel="Import & Overwrite"
+  confirmDanger={true}
+  onconfirm={handleImportOverwrite}
+  oncancel={() => (showImportConfirm = false)}
 />
 
 <style>

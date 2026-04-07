@@ -27,6 +27,11 @@ export const FS_WRITE_IMAGE_DATA = 'fs:write-image-data' as const
 // Validation channels
 export const VALIDATION_VALIDATE_VERSION = 'validation:validate-version' as const
 
+// API channels
+export const API_PUBLISH = 'api:publish' as const
+export const API_IMPORT_LIVE = 'api:import-live' as const
+export const API_PROGRESS = 'api:progress' as const
+
 // Union of all active IPC channels
 export type IpcChannel =
   | typeof SETTINGS_GET
@@ -50,3 +55,6 @@ export type IpcChannel =
   | typeof FS_READ_JSON_FILE
   | typeof FS_WRITE_IMAGE_DATA
   | typeof VALIDATION_VALIDATE_VERSION
+  | typeof API_PUBLISH
+  | typeof API_IMPORT_LIVE
+  | typeof API_PROGRESS

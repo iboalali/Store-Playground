@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 function unwrap<T>(result: IpcResult<T>): T {
@@ -106,5 +106,28 @@ export const ipc = {
   // Validation
   async validateVersion(versionDir: string): Promise<ValidationReport> {
     return unwrap(await window.api.validateVersion({ versionDir }))
+  },
+
+  // API
+  async publish(args: {
+    packageName: string
+    serviceAccountKeyPath: string
+    versionDir: string
+    appPath: string
+  }): Promise<void> {
+    return unwrap(await window.api.publish(args))
+  },
+
+  async importLive(args: {
+    packageName: string
+    serviceAccountKeyPath: string
+    targetDir: string
+    mode: string
+  }): Promise<void> {
+    return unwrap(await window.api.importLive(args))
+  },
+
+  onApiProgress(callback: (event: ProgressEvent) => void): () => void {
+    return window.api.onApiProgress(callback)
   }
 }

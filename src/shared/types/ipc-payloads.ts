@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport } from './models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -136,3 +136,21 @@ export interface ValidationValidateVersionRequest {
   versionDir: string
 }
 export type ValidationValidateVersionResponse = IpcResult<ValidationReport>
+
+// api:publish — publish a version directory to Google Play
+export interface ApiPublishRequest {
+  packageName: string
+  serviceAccountKeyPath: string
+  versionDir: string
+  appPath: string
+}
+export type ApiPublishResponse = IpcResult<void>
+
+// api:import-live — import live listing from Google Play to local filesystem
+export interface ApiImportLiveRequest {
+  packageName: string
+  serviceAccountKeyPath: string
+  targetDir: string
+  mode: 'new-app' | 'overwrite-version'
+}
+export type ApiImportLiveResponse = IpcResult<void>
