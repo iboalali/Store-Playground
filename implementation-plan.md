@@ -673,3 +673,4 @@ End-to-end verification after Phase 9:
 
 ## Future Work
 * Release notes
+* Android XR
