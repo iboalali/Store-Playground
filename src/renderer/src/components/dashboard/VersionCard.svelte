@@ -1,5 +1,7 @@
 <script lang="ts">
   import VersionActions from './VersionActions.svelte'
+  import Tooltip from '../shared/Tooltip.svelte'
+  import { currentAppStore } from '../../stores/current-app.svelte'
   import type { VersionEntry } from '$shared/types/models'
 
   interface Props {
@@ -24,6 +26,18 @@
         ? '#888'
         : '#ed6c02'
   )
+
+  const validationReport = $derived(currentAppStore.validationResults[version.dirName] ?? null)
+
+  const validationTooltip = $derived.by(() => {
+    if (!validationReport) return ''
+    if (validationReport.valid) return 'All checks passed'
+    return validationReport.errors
+      .slice(0, 5)
+      .map((e) => `${e.locale ? e.locale + ': ' : ''}${e.message}`)
+      .join('\n') +
+      (validationReport.errors.length > 5 ? `\n...and ${validationReport.errors.length - 5} more` : '')
+  })
 </script>
 
 <div class="version-card" class:live={version.isLive}>
@@ -36,6 +50,15 @@
       <span class="badge badge-status" style:background={statusColor}>
         {version.metadata.status}
       </span>
+      {#if validationReport}
+        <Tooltip text={validationTooltip}>
+          {#if validationReport.valid}
+            <span class="badge badge-valid">VALID</span>
+          {:else}
+            <span class="badge badge-invalid">{validationReport.errors.length} ERROR{validationReport.errors.length !== 1 ? 'S' : ''}</span>
+          {/if}
+        </Tooltip>
+      {/if}
     </div>
   </div>
 
@@ -125,5 +148,13 @@
   .card-actions {
     border-top: 1px solid #f0f0f0;
     padding-top: 12px;
+  }
+
+  .badge-valid {
+    background: #2e7d32;
+  }
+
+  .badge-invalid {
+    background: #d32f2f;
   }
 </style>

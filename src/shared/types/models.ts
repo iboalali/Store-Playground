@@ -103,3 +103,19 @@ export interface VersionData {
   createdAt: string
   screens: ScreenData[]
 }
+
+// --- Phase 6: Validation Engine types ---
+
+export interface ValidationError {
+  field: string
+  locale?: string
+  message: string
+  severity: 'error' | 'warning'
+}
+
+export interface ValidationReport {
+  valid: boolean
+  errors: ValidationError[]
+  warnings: ValidationError[]
+  checkedAt: string
+}

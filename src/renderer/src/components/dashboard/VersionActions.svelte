@@ -70,6 +70,12 @@
     busy = false
   }
 
+  async function handleValidate(): Promise<void> {
+    busy = true
+    await currentAppStore.validateVersion(version.dirName)
+    busy = false
+  }
+
   async function handleDelete(): Promise<void> {
     showDeleteConfirm = false
     busy = true
@@ -110,6 +116,13 @@
   {:else}
     <button class="btn-sm btn-primary" onclick={() => goToEditor(appPath, version.dirName)} disabled={busy}>
       Edit
+    </button>
+    <button
+      class="btn-sm btn-validate"
+      disabled={busy || currentAppStore.validatingVersion === version.dirName}
+      onclick={handleValidate}
+    >
+      {currentAppStore.validatingVersion === version.dirName ? 'Validating...' : 'Validate for Publish'}
     </button>
     {#if !version.isLive}
       <button class="btn-sm btn-secondary" onclick={handleSetLive} disabled={busy}>
@@ -213,5 +226,14 @@
 
   .btn-danger:hover:not(:disabled) {
     background: #fde0e0;
+  }
+
+  .btn-validate {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .btn-validate:hover:not(:disabled) {
+    background: #c8e6c9;
   }
 </style>

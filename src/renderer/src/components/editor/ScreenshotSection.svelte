@@ -7,6 +7,7 @@
     typeLabel: string
     maxCount: number
     imageTimestamp: number
+    validationError?: string | null
     onadd: (sourcePath: string) => void
     onpaste: (base64Data: string) => void
     ondelete: (fileName: string) => void
@@ -14,7 +15,7 @@
     onpickfromlibrary?: () => void
   }
 
-  let { group, typeLabel, maxCount, imageTimestamp, onadd, onpaste, ondelete, onreorder, onpickfromlibrary }: Props = $props()
+  let { group, typeLabel, maxCount, imageTimestamp, validationError = null, onadd, onpaste, ondelete, onreorder, onpickfromlibrary }: Props = $props()
 
   let dragSourceIdx = $state<number | null>(null)
   let dragOverIdx = $state<number | null>(null)
@@ -88,7 +89,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="screenshot-section" tabindex="0" onpaste={handlePaste}>
+<div class="screenshot-section" class:has-error={!!validationError} tabindex="0" onpaste={handlePaste}>
   <div class="section-header">
     <h3 class="section-title">{typeLabel} Screenshots</h3>
     <span class="section-count">{group.screenshots.length}/{maxCount}</span>
@@ -139,6 +140,10 @@
 
   {#if group.screenshots.length === 0}
     <p class="empty-hint">No screenshots yet. Click + to add or paste from clipboard.</p>
+  {/if}
+
+  {#if validationError}
+    <p class="validation-error">{validationError}</p>
   {/if}
 </div>
 
@@ -289,5 +294,16 @@
     color: #aaa;
     text-align: center;
     padding: 8px 0 4px;
+  }
+
+  .screenshot-section.has-error {
+    border-color: #d32f2f;
+  }
+
+  .validation-error {
+    font-size: 0.75rem;
+    color: #d32f2f;
+    margin: 6px 0 0;
+    padding: 0;
   }
 </style>

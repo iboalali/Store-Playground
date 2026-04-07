@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 function unwrap<T>(result: IpcResult<T>): T {
@@ -101,5 +101,10 @@ export const ipc = {
 
   async writeImageData(destPath: string, base64Data: string): Promise<void> {
     return unwrap(await window.api.writeImageData({ destPath, base64Data }))
+  },
+
+  // Validation
+  async validateVersion(versionDir: string): Promise<ValidationReport> {
+    return unwrap(await window.api.validateVersion({ versionDir }))
   }
 }

@@ -5,6 +5,7 @@
     maxLength: number
     multiline?: boolean
     placeholder?: string
+    error?: string | null
     oninput: (value: string) => void
   }
 
@@ -14,12 +15,14 @@
     maxLength,
     multiline = false,
     placeholder = '',
+    error = null,
     oninput
   }: Props = $props()
 
   const charCount = $derived(value.length)
   const isOverLimit = $derived(maxLength > 0 && charCount > maxLength)
   const isNearLimit = $derived(maxLength > 0 && charCount >= maxLength * 0.9 && !isOverLimit)
+  const hasError = $derived(!!error || isOverLimit)
 
   function handleInput(e: Event): void {
     const target = e.target as HTMLInputElement | HTMLTextAreaElement
@@ -44,7 +47,7 @@
   {#if multiline}
     <textarea
       class="input textarea"
-      class:over-limit={isOverLimit}
+      class:over-limit={hasError}
       rows={8}
       {placeholder}
       {value}
@@ -55,12 +58,16 @@
     <input
       type="text"
       class="input"
-      class:over-limit={isOverLimit}
+      class:over-limit={hasError}
       {placeholder}
       {value}
       aria-label={label}
       oninput={handleInput}
     />
+  {/if}
+
+  {#if error}
+    <span class="validation-error">{error}</span>
   {/if}
 </div>
 
@@ -123,5 +130,11 @@
     resize: vertical;
     min-height: 120px;
     line-height: 1.5;
+  }
+
+  .validation-error {
+    font-size: 0.75rem;
+    color: #d32f2f;
+    margin-top: 2px;
   }
 </style>

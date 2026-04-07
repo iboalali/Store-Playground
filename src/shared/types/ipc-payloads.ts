@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry } from './models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -130,3 +130,9 @@ export interface FsWriteImageDataRequest {
   base64Data: string
 }
 export type FsWriteImageDataResponse = IpcResult<void>
+
+// validation:validate-version — validate a version directory for publish readiness
+export interface ValidationValidateVersionRequest {
+  versionDir: string
+}
+export type ValidationValidateVersionResponse = IpcResult<ValidationReport>

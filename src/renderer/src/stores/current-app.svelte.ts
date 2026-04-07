@@ -1,6 +1,6 @@
 import { ipc } from '$lib/ipc'
 import { goHome } from '../router.svelte'
-import type { AppConfig, AppDetails, VersionEntry, VersionMetadata } from '$shared/types/models'
+import type { AppConfig, AppDetails, VersionEntry, VersionMetadata, ValidationReport } from '$shared/types/models'
 
 function joinPath(base: string, ...rest: string[]): string {
   const sep = base.includes('\\') ? '\\' : '/'
@@ -15,6 +15,8 @@ class CurrentAppStore {
   loading = $state(false)
   error = $state<string | null>(null)
   showArchived = $state(false)
+  validationResults = $state<Record<string, ValidationReport>>({})
+  validatingVersion = $state<string | null>(null)
 
   liveVersion = $derived(this.versions.find((v) => v.isLive) ?? null)
 
@@ -181,6 +183,22 @@ class CurrentAppStore {
       await this.refresh()
     } catch (err) {
       this.error = String(err)
+    }
+  }
+
+  async validateVersion(dirName: string): Promise<ValidationReport | null> {
+    const version = this.versions.find((v) => v.dirName === dirName)
+    if (!version) return null
+    this.validatingVersion = dirName
+    try {
+      const report = await ipc.validateVersion(version.dirPath)
+      this.validationResults[dirName] = report
+      return report
+    } catch (err) {
+      this.error = String(err)
+      return null
+    } finally {
+      this.validatingVersion = null
     }
   }
 

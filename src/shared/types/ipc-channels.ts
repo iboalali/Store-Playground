@@ -24,6 +24,9 @@ export const FS_LIST_DIRECTORY = 'fs:list-directory' as const
 export const FS_READ_JSON_FILE = 'fs:read-json-file' as const
 export const FS_WRITE_IMAGE_DATA = 'fs:write-image-data' as const
 
+// Validation channels
+export const VALIDATION_VALIDATE_VERSION = 'validation:validate-version' as const
+
 // Union of all active IPC channels
 export type IpcChannel =
   | typeof SETTINGS_GET
@@ -46,3 +49,4 @@ export type IpcChannel =
   | typeof FS_LIST_DIRECTORY
   | typeof FS_READ_JSON_FILE
   | typeof FS_WRITE_IMAGE_DATA
+  | typeof VALIDATION_VALIDATE_VERSION
