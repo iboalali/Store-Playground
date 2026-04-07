@@ -20,7 +20,8 @@ import {
   FS_WRITE_TEXT_FILE,
   FS_LIST_DIRECTORY,
   FS_READ_JSON_FILE,
-  FS_WRITE_IMAGE_DATA
+  FS_WRITE_IMAGE_DATA,
+  VALIDATION_VALIDATE_VERSION
 } from '$shared/types/ipc-channels'
 
 contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -73,5 +74,9 @@ contextBridge.exposeInMainWorld('api', {
   readJsonFile: (args: { filePath: string }) =>
     ipcRenderer.invoke(FS_READ_JSON_FILE, args),
   writeImageData: (args: { destPath: string; base64Data: string }) =>
-    ipcRenderer.invoke(FS_WRITE_IMAGE_DATA, args)
+    ipcRenderer.invoke(FS_WRITE_IMAGE_DATA, args),
+
+  // Validation
+  validateVersion: (args: { versionDir: string }) =>
+    ipcRenderer.invoke(VALIDATION_VALIDATE_VERSION, args)
 })

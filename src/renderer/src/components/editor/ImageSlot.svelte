@@ -4,12 +4,13 @@
     dimensions: string
     filePath: string | null
     imageTimestamp: number
+    validationError?: string | null
     onpick: () => void
     ondelete: () => void
     onpaste: (base64Data: string) => void
   }
 
-  let { label, dimensions, filePath, imageTimestamp, onpick, ondelete, onpaste }: Props = $props()
+  let { label, dimensions, filePath, imageTimestamp, validationError = null, onpick, ondelete, onpaste }: Props = $props()
 
   const imageSrc = $derived(filePath ? `file://${filePath}?t=${imageTimestamp}` : null)
 
@@ -41,6 +42,7 @@
 <div
   class="image-slot"
   class:has-image={imageSrc}
+  class:has-error={!!validationError}
   tabindex="0"
   onpaste={handlePaste}
 >
@@ -57,6 +59,10 @@
     </button>
   {/if}
 </div>
+
+{#if validationError}
+  <span class="validation-error">{validationError}</span>
+{/if}
 
 <style>
   .image-slot {
@@ -81,6 +87,10 @@
   .image-slot.has-image {
     border-style: solid;
     border-color: #e0e0e0;
+  }
+
+  .image-slot.has-error {
+    border-color: #d32f2f;
   }
 
   .preview {
@@ -173,5 +183,12 @@
     font-size: 0.625rem;
     color: #bbb;
     margin-top: 2px;
+  }
+
+  .validation-error {
+    font-size: 0.75rem;
+    color: #d32f2f;
+    margin-top: 4px;
+    display: block;
   }
 </style>

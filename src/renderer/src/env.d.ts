@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 interface Api {
@@ -38,6 +38,9 @@ interface Api {
   listDirectory(args: { dirPath: string }): Promise<IpcResult<DirectoryEntry[]>>
   readJsonFile(args: { filePath: string }): Promise<IpcResult<unknown>>
   writeImageData(args: { destPath: string; base64Data: string }): Promise<IpcResult<void>>
+
+  // Validation
+  validateVersion(args: { versionDir: string }): Promise<IpcResult<ValidationReport>>
 }
 
 declare global {

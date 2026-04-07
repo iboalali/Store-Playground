@@ -668,6 +668,8 @@ End-to-end verification after Phase 9:
 * Phase 3: Home Grid ✅ (see `phase-3-plan.md` for detailed implementation plan)
 * Phase 4: App Dashboard ✅ (see `phase-4-plan.md` for detailed implementation plan)
 * Phase 5: Store Listing Editor ✅ (see `phase-5-plan.md` for detailed implementation plan)
+* Phase 5.5: Screenshot Management ✅ (see `phase-5.5-plan.md` for detailed implementation plan)
+* Phase 6: Validation Engine ✅ (see `phase-6-plan.md` for detailed implementation plan)
 
 ## Future Work
 * Release notes

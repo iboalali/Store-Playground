@@ -69,6 +69,24 @@
       screenshots: []
     }
   }
+
+  function getTextError(key: string): string | null {
+    return editorStore.localeErrors[key] ?? null
+  }
+
+  function getImageErrors(): Record<string, string> {
+    const errors: Record<string, string> = {}
+    for (const [field, msg] of Object.entries(editorStore.localeErrors)) {
+      if (field.endsWith('.png') && !field.includes('/')) {
+        errors[field] = msg
+      }
+    }
+    return errors
+  }
+
+  function getScreenshotError(type: ScreenshotType): string | null {
+    return editorStore.localeErrors[`${type} screenshots`] ?? null
+  }
 </script>
 
 <main class="editor-page">
@@ -110,6 +128,7 @@
               maxLength={field.maxLength}
               multiline={field.key === 'fullDescription'}
               placeholder={field.key === 'videoUrl' ? 'https://...' : ''}
+              error={getTextError(field.key)}
               oninput={(v) => handleTextInput(field.key, v)}
             />
           {/each}
@@ -123,10 +142,34 @@
           >
             {editorStore.saving ? 'Saving...' : 'Save'}
           </button>
+          <button
+            class="btn btn-secondary"
+            disabled={editorStore.validating}
+            onclick={() => editorStore.validateVersion()}
+          >
+            {editorStore.validating ? 'Validating...' : 'Validate'}
+          </button>
           {#if editorStore.isDirty}
             <span class="dirty-hint">Unsaved changes (Ctrl+S)</span>
           {/if}
         </div>
+
+        {#if editorStore.validationReport}
+          <div class="validation-summary" class:valid={editorStore.validationReport.valid}>
+            {#if editorStore.validationReport.valid}
+              <span class="validation-pass">All checks passed</span>
+            {:else}
+              <span class="validation-fail">
+                {editorStore.validationReport.errors.length} error{editorStore.validationReport.errors.length !== 1 ? 's' : ''}
+              </span>
+            {/if}
+            {#if editorStore.validationReport.warnings.length > 0}
+              <span class="validation-warn">
+                {editorStore.validationReport.warnings.length} warning{editorStore.validationReport.warnings.length !== 1 ? 's' : ''}
+              </span>
+            {/if}
+          </div>
+        {/if}
       </section>
 
       <!-- Images -->
@@ -137,6 +180,7 @@
             images={editorStore.images}
             localePath={editorStore.localePath}
             imageTimestamp={editorStore.imageTimestamp}
+            imageErrors={getImageErrors()}
             onaddimage={(key, path) => editorStore.addImage(key, path)}
             ondeleteimage={(key) => editorStore.deleteImage(key)}
             onpasteimage={(key, b64) => editorStore.addImageFromClipboard(key, b64)}
@@ -154,6 +198,7 @@
               typeLabel={SCREENSHOT_LABELS[type]}
               maxCount={8}
               imageTimestamp={editorStore.imageTimestamp}
+              validationError={getScreenshotError(type)}
               onadd={(path) => editorStore.addScreenshot(type, path)}
               onpaste={(b64) => editorStore.addScreenshotFromClipboard(type, b64)}
               ondelete={(fn) => editorStore.deleteScreenshot(type, fn)}
@@ -310,5 +355,43 @@
 
   .btn-primary:hover:not(:disabled) {
     background: #0055aa;
+  }
+
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #e0e0e0;
+  }
+
+  .validation-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    margin-top: 8px;
+    background: #fef2f2;
+  }
+
+  .validation-summary.valid {
+    background: #f0fdf4;
+  }
+
+  .validation-pass {
+    color: #2e7d32;
+    font-weight: 500;
+  }
+
+  .validation-fail {
+    color: #d32f2f;
+    font-weight: 500;
+  }
+
+  .validation-warn {
+    color: #e68a00;
   }
 </style>

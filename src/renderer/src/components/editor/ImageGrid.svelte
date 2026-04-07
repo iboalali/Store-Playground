@@ -7,12 +7,13 @@
     images: Record<string, { filePath: string; exists: boolean }>
     localePath: string
     imageTimestamp: number
+    imageErrors?: Record<string, string>
     onaddimage: (key: string, sourcePath: string) => void
     ondeleteimage: (key: string) => void
     onpasteimage: (key: string, base64Data: string) => void
   }
 
-  let { images, localePath, imageTimestamp, onaddimage, ondeleteimage, onpasteimage }: Props = $props()
+  let { images, localePath, imageTimestamp, imageErrors = {}, onaddimage, ondeleteimage, onpasteimage }: Props = $props()
 
   async function handlePick(key: string): Promise<void> {
     const path = await ipc.openFileDialog({
@@ -34,6 +35,7 @@
         dimensions={img.dimensions}
         filePath={info?.exists ? info.filePath : null}
         {imageTimestamp}
+        validationError={imageErrors[img.fileName] ?? null}
         onpick={() => handlePick(img.key)}
         ondelete={() => ondeleteimage(img.key)}
         onpaste={(base64) => onpasteimage(img.key, base64)}

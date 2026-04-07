@@ -4,6 +4,7 @@ import { is } from '@electron-toolkit/utils'
 import { SettingsService } from './services/settings'
 import { registerSettingsHandlers, registerDialogHandlers } from './ipc/settings-handlers'
 import { registerFsHandlers } from './ipc/fs-handlers'
+import { registerValidationHandlers } from './ipc/validation-handlers'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -43,6 +44,7 @@ app.whenReady().then(() => {
   registerSettingsHandlers(settingsService)
   registerDialogHandlers()
   registerFsHandlers()
+  registerValidationHandlers()
 
   createWindow()
 

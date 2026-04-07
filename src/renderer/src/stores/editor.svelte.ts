@@ -1,5 +1,5 @@
 import { ipc } from '$lib/ipc'
-import type { LocaleTextFields, ScreenshotType, ScreenshotGroup } from '$shared/types/models'
+import type { LocaleTextFields, ScreenshotType, ScreenshotGroup, ValidationReport } from '$shared/types/models'
 
 function joinPath(base: string, ...rest: string[]): string {
   const sep = base.includes('\\') ? '\\' : '/'
@@ -50,8 +50,10 @@ class EditorStore {
 
   loading = $state(false)
   saving = $state(false)
+  validating = $state(false)
   error = $state<string | null>(null)
   imageTimestamp = $state(Date.now())
+  validationReport = $state<ValidationReport | null>(null)
 
   versionPath = $derived(
     this.appPath && this.versionDir ? joinPath(this.appPath, this.versionDir) : null
@@ -72,6 +74,18 @@ class EditorStore {
     title: this.texts.title.length,
     shortDescription: this.texts.shortDescription.length,
     fullDescription: this.texts.fullDescription.length
+  })
+
+  localeErrors = $derived.by(() => {
+    if (!this.validationReport || !this.activeLocale) return {}
+    const errors: Record<string, string> = {}
+    const allIssues = [...this.validationReport.errors, ...this.validationReport.warnings]
+    for (const issue of allIssues) {
+      if (issue.locale === this.activeLocale && !errors[issue.field]) {
+        errors[issue.field] = issue.message
+      }
+    }
+    return errors
   })
 
   async load(appPath: string, versionDir: string): Promise<void> {
@@ -214,6 +228,20 @@ class EditorStore {
       this.error = String(err)
     } finally {
       this.saving = false
+    }
+  }
+
+  async validateVersion(): Promise<ValidationReport | null> {
+    if (!this.versionPath) return null
+    this.validating = true
+    try {
+      this.validationReport = await ipc.validateVersion(this.versionPath)
+      return this.validationReport
+    } catch (err) {
+      this.error = String(err)
+      return null
+    } finally {
+      this.validating = false
     }
   }
 
