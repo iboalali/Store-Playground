@@ -119,3 +119,19 @@ export interface ValidationReport {
   warnings: ValidationError[]
   checkedAt: string
 }
+
+// --- Phase 7: Google Play API Integration types ---
+
+export interface ProgressStep {
+  id: string
+  label: string
+  status: 'pending' | 'active' | 'done' | 'error'
+  error?: string
+}
+
+export interface ProgressEvent {
+  operationType: 'publish' | 'import'
+  steps: ProgressStep[]
+  finished: boolean
+  abortError?: string
+}

@@ -1,11 +1,15 @@
 <script lang="ts">
   import { settingsStore } from '../stores/settings.svelte'
   import { appStateStore } from '../stores/app-state.svelte'
+  import { progressStore } from '../stores/progress.svelte'
   import { ipc } from '$lib/ipc'
   import AppCard from '../components/home/AppCard.svelte'
   import AddAppDialog from '../components/home/AddAppDialog.svelte'
+  import ImportAppDialog from '../components/home/ImportAppDialog.svelte'
+  import ProgressPanel from '../components/shared/ProgressPanel.svelte'
 
   let showAddDialog = $state(false)
+  let showImportDialog = $state(false)
   let createError = $state<string | null>(null)
 
   $effect(() => {
@@ -33,6 +37,34 @@
     showAddDialog = false
     createError = null
   }
+
+  function handleCloseImportDialog(): void {
+    showImportDialog = false
+  }
+
+  function joinPath(base: string, ...rest: string[]): string {
+    const sep = base.includes('\\') ? '\\' : '/'
+    return [base, ...rest].join(sep)
+  }
+
+  async function handleImport(packageName: string): Promise<void> {
+    const wp = settingsStore.workspacePath
+    if (!wp || !settingsStore.serviceAccountKeyPath) return
+
+    showImportDialog = false
+    progressStore.subscribe()
+    try {
+      await ipc.importLive({
+        packageName,
+        serviceAccountKeyPath: settingsStore.serviceAccountKeyPath,
+        targetDir: joinPath(wp, packageName),
+        mode: 'new-app'
+      })
+      await appStateStore.refresh(wp)
+    } catch {
+      // Error shown in ProgressPanel
+    }
+  }
 </script>
 
 <main class="home-grid-page">
@@ -47,6 +79,8 @@
     <div class="error-banner">{createError}</div>
   {/if}
 
+  <ProgressPanel />
+
   {#if appStateStore.loading}
     <p class="status">Loading apps...</p>
   {:else if appStateStore.error}
@@ -60,6 +94,14 @@
         <span class="plus-icon">+</span>
         <span class="add-label">Add App</span>
       </button>
+      <button
+        class="add-card"
+        onclick={() => (showImportDialog = true)}
+        disabled={progressStore.active || !settingsStore.serviceAccountKeyPath}
+      >
+        <span class="plus-icon">&#8615;</span>
+        <span class="add-label">Import from Play</span>
+      </button>
     </div>
   {/if}
 </main>
@@ -68,6 +110,12 @@
   open={showAddDialog}
   onclose={handleCloseDialog}
   oncreate={handleCreate}
+/>
+
+<ImportAppDialog
+  open={showImportDialog}
+  onclose={handleCloseImportDialog}
+  onimport={handleImport}
 />
 
 <style>

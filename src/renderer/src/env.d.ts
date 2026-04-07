@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 interface Api {
@@ -41,6 +41,21 @@ interface Api {
 
   // Validation
   validateVersion(args: { versionDir: string }): Promise<IpcResult<ValidationReport>>
+
+  // API
+  publish(args: {
+    packageName: string
+    serviceAccountKeyPath: string
+    versionDir: string
+    appPath: string
+  }): Promise<IpcResult<void>>
+  importLive(args: {
+    packageName: string
+    serviceAccountKeyPath: string
+    targetDir: string
+    mode: string
+  }): Promise<IpcResult<void>>
+  onApiProgress(callback: (event: ProgressEvent) => void): () => void
 }
 
 declare global {

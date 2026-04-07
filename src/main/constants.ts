@@ -69,6 +69,13 @@ export const SCREENSHOT_LIMITS: Record<string, { min: number; max: number; requi
   wear: { min: 1, max: 8, requiredWhenPresent: true }
 }
 
+// Non-screenshot image file to API image type mapping
+export const IMAGE_FILE_TO_API_TYPE: Record<string, string> = {
+  'high_res_icon.png': 'icon',
+  'feature_graphic.png': 'featureGraphic',
+  'tv_banner.png': 'tvBanner'
+}
+
 // Directory name to API image type mapping
 export const DIR_TO_API_TYPE: Record<string, string> = {
   phone: 'phoneScreenshots',

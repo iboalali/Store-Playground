@@ -5,6 +5,7 @@ import { SettingsService } from './services/settings'
 import { registerSettingsHandlers, registerDialogHandlers } from './ipc/settings-handlers'
 import { registerFsHandlers } from './ipc/fs-handlers'
 import { registerValidationHandlers } from './ipc/validation-handlers'
+import { registerApiHandlers } from './ipc/api-handlers'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -45,6 +46,7 @@ app.whenReady().then(() => {
   registerDialogHandlers()
   registerFsHandlers()
   registerValidationHandlers()
+  registerApiHandlers()
 
   createWindow()
 
