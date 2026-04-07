@@ -7,6 +7,7 @@
   import ScreenshotSection from '../components/editor/ScreenshotSection.svelte'
   import LocaleSelector from '../components/editor/LocaleSelector.svelte'
   import ConfirmDialog from '../components/shared/ConfirmDialog.svelte'
+  import ScreenshotPicker from '../components/editor/ScreenshotPicker.svelte'
   import type { ScreenshotType } from '$shared/types/models'
 
   const route = $derived(getRoute())
@@ -16,6 +17,8 @@
   let showAddLocale = $state(false)
   let showDuplicateLocale = $state(false)
   let showDeleteLocaleConfirm = $state(false)
+  let showScreenshotPicker = $state(false)
+  let pickerScreenshotType = $state<ScreenshotType | null>(null)
 
   $effect(() => {
     if (appPath && versionDir) {
@@ -155,6 +158,10 @@
               onpaste={(b64) => editorStore.addScreenshotFromClipboard(type, b64)}
               ondelete={(fn) => editorStore.deleteScreenshot(type, fn)}
               onreorder={(order) => editorStore.reorderScreenshots(type, order)}
+              onpickfromlibrary={() => {
+                pickerScreenshotType = type
+                showScreenshotPicker = true
+              }}
             />
           {/each}
         </div>
@@ -188,6 +195,19 @@
   confirmDanger={true}
   onconfirm={handleDeleteLocale}
   oncancel={() => (showDeleteLocaleConfirm = false)}
+/>
+
+<ScreenshotPicker
+  open={showScreenshotPicker}
+  appPath={appPath}
+  imageTimestamp={editorStore.imageTimestamp}
+  onpick={(filePath) => {
+    showScreenshotPicker = false
+    if (pickerScreenshotType) {
+      editorStore.addScreenshot(pickerScreenshotType, filePath)
+    }
+  }}
+  oncancel={() => (showScreenshotPicker = false)}
 />
 
 <style>
