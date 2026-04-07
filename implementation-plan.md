@@ -662,5 +662,12 @@ End-to-end verification after Phase 9:
 16. Keyboard shortcuts and menu bar all functional
 17. Package with electron-builder -> built app launches correctly
 
+## Completed Phases
+* Phase 1: Project Scaffolding ✅ (see `phase-1-plan.md` for detailed implementation plan)
+* Phase 2: Settings + Navigation Infrastructure ✅ (see `phase-2-plan.md` for detailed implementation plan)
+* Phase 3: Home Grid ✅ (see `phase-3-plan.md` for detailed implementation plan)
+* Phase 4: App Dashboard ✅ (see `phase-4-plan.md` for detailed implementation plan)
+* Phase 5: Store Listing Editor ✅ (see `phase-5-plan.md` for detailed implementation plan)
+
 ## Future Work
 * Release notes

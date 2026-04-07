@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 function unwrap<T>(result: IpcResult<T>): T {
@@ -81,5 +81,25 @@ export const ipc = {
 
   async renameItem(oldPath: string, newPath: string): Promise<void> {
     return unwrap(await window.api.renameItem({ oldPath, newPath }))
+  },
+
+  async readTextFile(filePath: string): Promise<string> {
+    return unwrap(await window.api.readTextFile({ filePath }))
+  },
+
+  async writeTextFile(filePath: string, content: string): Promise<void> {
+    return unwrap(await window.api.writeTextFile({ filePath, content }))
+  },
+
+  async listDirectory(dirPath: string): Promise<DirectoryEntry[]> {
+    return unwrap(await window.api.listDirectory({ dirPath }))
+  },
+
+  async readJsonFile(filePath: string): Promise<unknown> {
+    return unwrap(await window.api.readJsonFile({ filePath }))
+  },
+
+  async writeImageData(destPath: string, base64Data: string): Promise<void> {
+    return unwrap(await window.api.writeImageData({ destPath, base64Data }))
   }
 }

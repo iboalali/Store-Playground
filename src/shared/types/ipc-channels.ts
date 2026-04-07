@@ -18,6 +18,11 @@ export const FS_READ_APP_DETAILS = 'fs:read-app-details' as const
 export const FS_LIST_VERSIONS = 'fs:list-versions' as const
 export const FS_COPY_DIRECTORY = 'fs:copy-directory' as const
 export const FS_RENAME_ITEM = 'fs:rename-item' as const
+export const FS_READ_TEXT_FILE = 'fs:read-text-file' as const
+export const FS_WRITE_TEXT_FILE = 'fs:write-text-file' as const
+export const FS_LIST_DIRECTORY = 'fs:list-directory' as const
+export const FS_READ_JSON_FILE = 'fs:read-json-file' as const
+export const FS_WRITE_IMAGE_DATA = 'fs:write-image-data' as const
 
 // Union of all active IPC channels
 export type IpcChannel =
@@ -36,3 +41,8 @@ export type IpcChannel =
   | typeof FS_LIST_VERSIONS
   | typeof FS_COPY_DIRECTORY
   | typeof FS_RENAME_ITEM
+  | typeof FS_READ_TEXT_FILE
+  | typeof FS_WRITE_TEXT_FILE
+  | typeof FS_LIST_DIRECTORY
+  | typeof FS_READ_JSON_FILE
+  | typeof FS_WRITE_IMAGE_DATA

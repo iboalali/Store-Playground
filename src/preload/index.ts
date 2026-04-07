@@ -15,7 +15,12 @@ import {
   FS_READ_APP_DETAILS,
   FS_LIST_VERSIONS,
   FS_COPY_DIRECTORY,
-  FS_RENAME_ITEM
+  FS_RENAME_ITEM,
+  FS_READ_TEXT_FILE,
+  FS_WRITE_TEXT_FILE,
+  FS_LIST_DIRECTORY,
+  FS_READ_JSON_FILE,
+  FS_WRITE_IMAGE_DATA
 } from '$shared/types/ipc-channels'
 
 contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -58,5 +63,15 @@ contextBridge.exposeInMainWorld('api', {
   copyDirectory: (args: { src: string; dest: string }) =>
     ipcRenderer.invoke(FS_COPY_DIRECTORY, args),
   renameItem: (args: { oldPath: string; newPath: string }) =>
-    ipcRenderer.invoke(FS_RENAME_ITEM, args)
+    ipcRenderer.invoke(FS_RENAME_ITEM, args),
+  readTextFile: (args: { filePath: string }) =>
+    ipcRenderer.invoke(FS_READ_TEXT_FILE, args),
+  writeTextFile: (args: { filePath: string; content: string }) =>
+    ipcRenderer.invoke(FS_WRITE_TEXT_FILE, args),
+  listDirectory: (args: { dirPath: string }) =>
+    ipcRenderer.invoke(FS_LIST_DIRECTORY, args),
+  readJsonFile: (args: { filePath: string }) =>
+    ipcRenderer.invoke(FS_READ_JSON_FILE, args),
+  writeImageData: (args: { destPath: string; base64Data: string }) =>
+    ipcRenderer.invoke(FS_WRITE_IMAGE_DATA, args)
 })
