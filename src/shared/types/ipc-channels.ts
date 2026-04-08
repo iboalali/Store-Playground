@@ -1,6 +1,7 @@
 // Settings channels
 export const SETTINGS_GET = 'settings:get' as const
 export const SETTINGS_SET = 'settings:set' as const
+export const SETTINGS_RESET_ALL = 'settings:reset-all' as const
 
 // Native dialog channels
 export const DIALOG_OPEN_DIRECTORY = 'dialog:open-directory' as const
@@ -49,6 +50,7 @@ export const MENU_ACTION = 'menu:action' as const
 export type IpcChannel =
   | typeof SETTINGS_GET
   | typeof SETTINGS_SET
+  | typeof SETTINGS_RESET_ALL
   | typeof DIALOG_OPEN_DIRECTORY
   | typeof DIALOG_OPEN_FILE
   | typeof FS_READ_WORKSPACE

@@ -305,6 +305,7 @@ Key columns and their types:
 * **Workspace Path (Required):** A directory picker for the workspace root. The Home Grid is inaccessible until a valid workspace path is set.
 * **Service Account Key Path (Optional):** A file picker for the Google Cloud Service Account JSON key. Required only for Publish and Import operations. If not set, API-dependent buttons are disabled with a tooltip explaining why.
 * **Storage:** Settings are persisted as a JSON file in Electron's `app.getPath('userData')` directory (OS-specific user data location).
+* **Reset Everything:** A "Danger Zone" section at the bottom of the Settings page provides a "Reset Everything" button. Clicking it opens a confirmation dialog (danger-styled) warning the user that all workspace contents will be moved to the OS trash and settings will be cleared. On confirmation, the backend trashes all top-level entries inside the workspace directory via `shell.trashItem()`, stops the file watcher, and resets the settings file to defaults (`workspacePath: null`, `serviceAccountKeyPath: null`). The app then returns to the initial unconfigured Settings screen. This is useful for testing and starting fresh. The IPC channel used is `settings:reset-all` (no arguments, returns void).
 
 ### Screen 1: Home (App Grid)
 

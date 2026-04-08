@@ -1,7 +1,10 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import { ipcMain, dialog, BrowserWindow, shell } from 'electron'
+import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
 import {
   SETTINGS_GET,
   SETTINGS_SET,
+  SETTINGS_RESET_ALL,
   DIALOG_OPEN_DIRECTORY,
   DIALOG_OPEN_FILE
 } from '$shared/types/ipc-channels'
@@ -45,6 +48,30 @@ export function registerSettingsHandlers(
       }
     }
   )
+
+  ipcMain.handle(SETTINGS_RESET_ALL, async (): Promise<IpcResult<void>> => {
+    try {
+      const settings = await settingsService.get()
+
+      if (settings.workspacePath) {
+        try {
+          const entries = await readdir(settings.workspacePath)
+          for (const entry of entries) {
+            await shell.trashItem(join(settings.workspacePath, entry))
+          }
+        } catch {
+          // Workspace directory may not exist or be inaccessible — continue with reset
+        }
+      }
+
+      await watcherService.stop()
+      await settingsService.reset()
+
+      return { success: true, data: undefined }
+    } catch (err) {
+      return { success: false, error: String(err) }
+    }
+  })
 }
 
 export function registerDialogHandlers(): void {

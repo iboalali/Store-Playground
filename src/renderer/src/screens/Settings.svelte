@@ -1,6 +1,21 @@
 <script lang="ts">
   import { settingsStore } from '../stores/settings.svelte'
-  import { goHome } from '../router.svelte'
+  import { goHome, goSettings } from '../router.svelte'
+  import ConfirmDialog from '../components/shared/ConfirmDialog.svelte'
+
+  let showResetConfirm = $state(false)
+  let resetting = $state(false)
+
+  async function handleResetAll(): Promise<void> {
+    showResetConfirm = false
+    resetting = true
+    try {
+      await settingsStore.resetAll()
+      goSettings()
+    } finally {
+      resetting = false
+    }
+  }
 </script>
 
 <div class="settings-page">
@@ -41,6 +56,23 @@
       </div>
     </section>
 
+    {#if settingsStore.isConfigured}
+      <section class="setting-group danger-zone">
+        <h2 class="setting-label">Danger Zone</h2>
+        <p class="setting-description">
+          Reset the application to its initial state. All workspace contents will be moved to the
+          OS trash and settings will be cleared.
+        </p>
+        <button
+          class="reset-button"
+          disabled={resetting}
+          onclick={() => (showResetConfirm = true)}
+        >
+          {resetting ? 'Resetting...' : 'Reset Everything'}
+        </button>
+      </section>
+    {/if}
+
     {#if settingsStore.error}
       <div class="error-banner">{settingsStore.error}</div>
     {/if}
@@ -50,6 +82,16 @@
     {/if}
   </div>
 </div>
+
+<ConfirmDialog
+  open={showResetConfirm}
+  title="Reset Everything"
+  message="This will move ALL workspace contents to the trash and clear all settings. This action cannot be undone. Are you sure?"
+  confirmLabel="Reset Everything"
+  confirmDanger={true}
+  onconfirm={handleResetAll}
+  oncancel={() => (showResetConfirm = false)}
+/>
 
 <style>
   .settings-page {
@@ -169,5 +211,29 @@
 
   .back-button:hover {
     background: #0052a3;
+  }
+
+  .danger-zone {
+    border-color: #fecaca;
+  }
+
+  .reset-button {
+    padding: 8px 20px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    background: #d32f2f;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .reset-button:hover:not(:disabled) {
+    background: #b71c1c;
+  }
+
+  .reset-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 </style>

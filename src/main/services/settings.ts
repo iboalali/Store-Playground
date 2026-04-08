@@ -39,4 +39,11 @@ export class SettingsService {
     this.cache = updated
     return updated
   }
+
+  async reset(): Promise<void> {
+    const defaults = { ...DEFAULT_SETTINGS }
+    await mkdir(dirname(this.filePath), { recursive: true })
+    await writeFile(this.filePath, JSON.stringify(defaults, null, 2), 'utf-8')
+    this.cache = defaults
+  }
 }

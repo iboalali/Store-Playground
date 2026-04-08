@@ -60,6 +60,17 @@ class SettingsStore {
       await this.setServiceAccountKeyPath(path)
     }
   }
+
+  async resetAll(): Promise<void> {
+    try {
+      await ipc.resetAll()
+      this.workspacePath = null
+      this.serviceAccountKeyPath = null
+      this.error = null
+    } catch (err) {
+      this.error = String(err)
+    }
+  }
 }
 
 export const settingsStore = new SettingsStore()
