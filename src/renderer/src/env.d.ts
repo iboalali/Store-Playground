@@ -5,6 +5,7 @@ interface Api {
   // Settings
   getSettings(): Promise<IpcResult<Settings>>
   setSettings(partial: Partial<Settings>): Promise<IpcResult<Settings>>
+  resetAll(): Promise<IpcResult<void>>
 
   // Native dialogs
   openDirectoryDialog(args?: {

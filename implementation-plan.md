@@ -674,6 +674,36 @@ End-to-end verification after Phase 9:
 * Phase 8: File Watching, Menu Bar & Polish ✅ (see `phase-8-plan.md` for detailed implementation plan)
 * Phase 9: Financial Reports & Analytics (see `phase-9-plan.md` for detailed implementation plan)
 
+### Phase 10: Reset Everything
+**Goal:** A one-click reset option on Settings to return the app to its initial state, for easier testing
+
+- Add `SETTINGS_RESET_ALL` IPC channel (`settings:reset-all`)
+- Add `reset()` method to `SettingsService` — writes default settings to disk and clears cache
+- Add IPC handler in `settings-handlers.ts`:
+  - Reads workspace path from current settings
+  - Trashes all workspace contents via `shell.trashItem()` (each top-level entry)
+  - Stops the file watcher
+  - Resets settings to defaults
+- Wire through preload bridge, `env.d.ts` type declaration, and `ipc.ts` renderer wrapper
+- Add `resetAll()` method to `settingsStore` — calls IPC, clears local reactive state
+- Add "Danger Zone" section to `Settings.svelte` with red-bordered card, description, and "Reset Everything" button
+- Use existing `ConfirmDialog` component with `confirmDanger={true}` for confirmation
+- After reset, navigates to Settings screen in unconfigured state (first-launch flow)
+
+**Files modified:**
+- `src/shared/types/ipc-channels.ts`
+- `src/shared/types/ipc-payloads.ts`
+- `src/main/services/settings.ts`
+- `src/main/ipc/settings-handlers.ts`
+- `src/preload/index.ts`
+- `src/renderer/src/env.d.ts`
+- `src/renderer/src/lib/ipc.ts`
+- `src/renderer/src/stores/settings.svelte.ts`
+- `src/renderer/src/screens/Settings.svelte`
+
+## Completed Phases (updated)
+* Phase 10: Reset Everything ✅
+
 ## Future Work
 * Release notes
 * Android XR

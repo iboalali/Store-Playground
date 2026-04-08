@@ -12,6 +12,9 @@ export type SettingsGetResponse = IpcResult<Settings>
 export type SettingsSetRequest = Partial<Settings>
 export type SettingsSetResponse = IpcResult<Settings>
 
+// settings:reset-all — no args, resets settings + trashes workspace contents
+export type SettingsResetAllResponse = IpcResult<void>
+
 // dialog:open-directory — optional config, returns path or null (cancelled)
 export interface DialogOpenDirectoryRequest {
   title?: string

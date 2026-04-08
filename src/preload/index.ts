@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import {
   SETTINGS_GET,
   SETTINGS_SET,
+  SETTINGS_RESET_ALL,
   DIALOG_OPEN_DIRECTORY,
   DIALOG_OPEN_FILE,
   FS_READ_WORKSPACE,
@@ -40,6 +41,7 @@ contextBridge.exposeInMainWorld('api', {
   // Settings
   getSettings: () => ipcRenderer.invoke(SETTINGS_GET),
   setSettings: (partial: Record<string, unknown>) => ipcRenderer.invoke(SETTINGS_SET, partial),
+  resetAll: () => ipcRenderer.invoke(SETTINGS_RESET_ALL),
 
   // Native dialogs
   openDirectoryDialog: (args?: { title?: string; defaultPath?: string }) =>

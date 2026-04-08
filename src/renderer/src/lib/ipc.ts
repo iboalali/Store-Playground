@@ -18,6 +18,10 @@ export const ipc = {
     return unwrap(await window.api.setSettings(partial))
   },
 
+  async resetAll(): Promise<void> {
+    return unwrap(await window.api.resetAll())
+  },
+
   // Native dialogs
   async openDirectoryDialog(args?: {
     title?: string
