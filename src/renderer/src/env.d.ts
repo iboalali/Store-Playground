@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 interface Api {
@@ -55,6 +55,17 @@ interface Api {
     targetDir: string
     mode: string
   }): Promise<IpcResult<void>>
+  // Reports
+  importCsv(args: { csvPath: string; workspacePath: string }): Promise<IpcResult<ImportSummary>>
+  getReportsIndex(args: { workspacePath: string }): Promise<IpcResult<ReportsIndex>>
+  getReportsMonth(args: { workspacePath: string; monthKey: string }): Promise<IpcResult<Transaction[]>>
+  getReportsAggregation(args: {
+    workspacePath: string
+    monthKeys: string[]
+    appPackageName?: string
+  }): Promise<IpcResult<AggregationResult>>
+  deleteReportsMonth(args: { workspacePath: string; monthKey: string }): Promise<IpcResult<void>>
+
   onApiProgress(callback: (event: ProgressEvent) => void): () => void
   onWatcherChange(callback: () => void): () => void
   onMenuAction(callback: (action: string) => void): () => void

@@ -12,6 +12,8 @@
   import AppDashboard from './screens/AppDashboard.svelte'
   import StoreListingEditor from './screens/StoreListingEditor.svelte'
   import ScreenshotManager from './screens/ScreenshotManager.svelte'
+  import FinancialReports from './screens/FinancialReports.svelte'
+  import { reportsStore } from './stores/reports.svelte'
   import type { Route } from './router.svelte'
 
   let initialized = $state(false)
@@ -44,6 +46,9 @@
         break
       case 'screenshots':
         screenshotManagerStore.reload()
+        break
+      case 'reports':
+        reportsStore.reload()
         break
     }
   }
@@ -128,9 +133,7 @@
   {:else if route.screen === 'screenshots'}
     <ScreenshotManager />
   {:else if route.screen === 'reports'}
-    <main class="placeholder">
-      <p>Financial Reports (Phase 9)</p>
-    </main>
+    <FinancialReports />
   {/if}
 {/if}
 
@@ -143,12 +146,4 @@
     color: #666;
   }
 
-  .placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: calc(100vh - 48px);
-    color: #999;
-    font-size: 1.125rem;
-  }
 </style>

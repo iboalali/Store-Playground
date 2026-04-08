@@ -7,6 +7,7 @@ import { registerSettingsHandlers, registerDialogHandlers } from './ipc/settings
 import { registerFsHandlers } from './ipc/fs-handlers'
 import { registerValidationHandlers } from './ipc/validation-handlers'
 import { registerApiHandlers } from './ipc/api-handlers'
+import { registerReportsHandlers } from './ipc/reports-handlers'
 import { initWatcher } from './ipc/watcher-handlers'
 import { buildMenu } from './menu'
 
@@ -52,6 +53,7 @@ app.whenReady().then(() => {
   registerFsHandlers()
   registerValidationHandlers()
   registerApiHandlers(watcherService)
+  registerReportsHandlers()
 
   const mainWindow = createWindow()
 

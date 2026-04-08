@@ -135,3 +135,83 @@ export interface ProgressEvent {
   finished: boolean
   abortError?: string
 }
+
+// --- Phase 9: Financial Reports types ---
+
+export interface ReportsIndex {
+  importedFiles: ImportedFile[]
+  dateRange: { earliest: string; latest: string }
+}
+
+export interface ImportedFile {
+  filename: string
+  importedAt: string
+  monthKey: string
+  rowCount: number
+  apps: string[]
+}
+
+export interface Transaction {
+  id: string
+  date: string
+  type: 'charge' | 'google-fee' | 'charge-refund' | 'google-fee-refund' | 'tax'
+  refundType: string | null
+  productId: string
+  productTitle: string
+  productType: 'one-time' | 'subscription'
+  skuId: string | null
+  hardware: string
+  buyerCountry: string
+  buyerState: string
+  buyerPostalCode: string
+  buyerCurrency: string
+  buyerAmount: number
+  conversionRate: number
+  merchantCurrency: string
+  merchantAmount: number
+  basePlanId: string | null
+  offerId: string | null
+  serviceFeePercent: number | null
+  firstMillionEligible: boolean
+}
+
+export interface MonthlyAggregation {
+  month: string
+  grossRevenue: number
+  googleFees: number
+  refunds: number
+  netRevenue: number
+  totalTransactions: number
+  refundCount: number
+  refundRate: number
+  merchantCurrency: string
+}
+
+export interface CountryAggregation {
+  country: string
+  grossRevenue: number
+  transactionCount: number
+  percentage: number
+}
+
+export interface ProductAggregation {
+  productId: string
+  productTitle: string
+  productType: 'one-time' | 'subscription'
+  skuId: string | null
+  grossRevenue: number
+  transactionCount: number
+}
+
+export interface ImportSummary {
+  monthKey: string
+  rowCount: number
+  apps: string[]
+  filename: string
+}
+
+export interface AggregationResult {
+  monthly: MonthlyAggregation[]
+  byCountry: CountryAggregation[]
+  byProduct: ProductAggregation[]
+}

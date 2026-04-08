@@ -35,6 +35,13 @@ export const API_PROGRESS = 'api:progress' as const
 // Watcher channels (Main → Renderer push)
 export const WATCHER_CHANGE = 'watcher:change' as const
 
+// Reports channels
+export const REPORTS_IMPORT_CSV = 'reports:import-csv' as const
+export const REPORTS_GET_INDEX = 'reports:get-index' as const
+export const REPORTS_GET_MONTH = 'reports:get-month' as const
+export const REPORTS_GET_AGGREGATION = 'reports:get-aggregation' as const
+export const REPORTS_DELETE_MONTH = 'reports:delete-month' as const
+
 // Menu channels (Main → Renderer push)
 export const MENU_ACTION = 'menu:action' as const
 
@@ -64,5 +71,10 @@ export type IpcChannel =
   | typeof API_PUBLISH
   | typeof API_IMPORT_LIVE
   | typeof API_PROGRESS
+  | typeof REPORTS_IMPORT_CSV
+  | typeof REPORTS_GET_INDEX
+  | typeof REPORTS_GET_MONTH
+  | typeof REPORTS_GET_AGGREGATION
+  | typeof REPORTS_DELETE_MONTH
   | typeof WATCHER_CHANGE
   | typeof MENU_ACTION

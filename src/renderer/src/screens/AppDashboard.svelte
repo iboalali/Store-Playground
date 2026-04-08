@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getRoute } from '../router.svelte'
-  import { goToScreenshots } from '../router.svelte'
+  import { goToScreenshots, goToReports } from '../router.svelte'
   import { currentAppStore } from '../stores/current-app.svelte'
   import { settingsStore } from '../stores/settings.svelte'
   import { progressStore } from '../stores/progress.svelte'
@@ -121,6 +121,9 @@
         </button>
         <button class="btn btn-secondary" onclick={() => goToScreenshots(appPath)}>
           Screenshot Manager
+        </button>
+        <button class="btn btn-secondary" onclick={() => goToReports(appPath)}>
+          Financial Reports
         </button>
         <button class="btn btn-danger" onclick={() => (showDeleteAppConfirm = true)}>
           Delete App

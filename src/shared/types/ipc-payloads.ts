@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent } from './models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -154,6 +154,41 @@ export interface ApiImportLiveRequest {
   mode: 'new-app' | 'overwrite-version'
 }
 export type ApiImportLiveResponse = IpcResult<void>
+
+// reports:import-csv — parse CSV, write parsed JSON, update index, copy raw CSV
+export interface ReportsImportCsvRequest {
+  csvPath: string
+  workspacePath: string
+}
+export type ReportsImportCsvResponse = IpcResult<ImportSummary>
+
+// reports:get-index — read reports_index.json
+export interface ReportsGetIndexRequest {
+  workspacePath: string
+}
+export type ReportsGetIndexResponse = IpcResult<ReportsIndex>
+
+// reports:get-month — read parsed month JSON
+export interface ReportsGetMonthRequest {
+  workspacePath: string
+  monthKey: string
+}
+export type ReportsGetMonthResponse = IpcResult<Transaction[]>
+
+// reports:get-aggregation — compute aggregations on the fly
+export interface ReportsGetAggregationRequest {
+  workspacePath: string
+  monthKeys: string[]
+  appPackageName?: string
+}
+export type ReportsGetAggregationResponse = IpcResult<AggregationResult>
+
+// reports:delete-month — remove month data + update index
+export interface ReportsDeleteMonthRequest {
+  workspacePath: string
+  monthKey: string
+}
+export type ReportsDeleteMonthResponse = IpcResult<void>
 
 // Menu action names dispatched from main menu to renderer
 export type MenuAction =
