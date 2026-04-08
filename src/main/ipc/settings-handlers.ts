@@ -8,8 +8,12 @@ import {
 import type { SettingsSetRequest, IpcResult } from '$shared/types/ipc-payloads'
 import type { Settings } from '$shared/types/models'
 import type { SettingsService } from '../services/settings'
+import type { WatcherService } from '../services/watcher'
 
-export function registerSettingsHandlers(settingsService: SettingsService): void {
+export function registerSettingsHandlers(
+  settingsService: SettingsService,
+  watcherService: WatcherService
+): void {
   ipcMain.handle(SETTINGS_GET, async (): Promise<IpcResult<Settings>> => {
     try {
       const settings = await settingsService.get()
@@ -23,7 +27,18 @@ export function registerSettingsHandlers(settingsService: SettingsService): void
     SETTINGS_SET,
     async (_event, partial: SettingsSetRequest): Promise<IpcResult<Settings>> => {
       try {
+        const oldSettings = await settingsService.get()
         const updated = await settingsService.set(partial)
+
+        // Restart watcher if workspace path changed
+        if (updated.workspacePath !== oldSettings.workspacePath) {
+          if (updated.workspacePath) {
+            await watcherService.start(updated.workspacePath)
+          } else {
+            await watcherService.stop()
+          }
+        }
+
         return { success: true, data: updated }
       } catch (err) {
         return { success: false, error: String(err) }

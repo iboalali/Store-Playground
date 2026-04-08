@@ -26,17 +26,13 @@
     }
   })
 
+  // Listen for menu:add-localization action from menu bar
   $effect(() => {
-    function handleKeydown(e: KeyboardEvent): void {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
-        if (editorStore.isDirty && !editorStore.saving) {
-          editorStore.saveTexts()
-        }
-      }
+    function handleMenuAddLocale(): void {
+      showAddLocale = true
     }
-    window.addEventListener('keydown', handleKeydown)
-    return () => window.removeEventListener('keydown', handleKeydown)
+    window.addEventListener('menu:add-localization', handleMenuAddLocale)
+    return () => window.removeEventListener('menu:add-localization', handleMenuAddLocale)
   })
 
   function handleTextInput(key: string, value: string): void {

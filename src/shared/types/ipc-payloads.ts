@@ -154,3 +154,16 @@ export interface ApiImportLiveRequest {
   mode: 'new-app' | 'overwrite-version'
 }
 export type ApiImportLiveResponse = IpcResult<void>
+
+// Menu action names dispatched from main menu to renderer
+export type MenuAction =
+  | 'new-app'
+  | 'open-workspace'
+  | 'settings'
+  | 'save'
+  | 'new-listing'
+  | 'refresh'
+  | 'toggle-archived'
+  | 'publish'
+  | 'import-live'
+  | 'add-localization'

@@ -24,7 +24,9 @@ import {
   VALIDATION_VALIDATE_VERSION,
   API_PUBLISH,
   API_IMPORT_LIVE,
-  API_PROGRESS
+  API_PROGRESS,
+  WATCHER_CHANGE,
+  MENU_ACTION
 } from '$shared/types/ipc-channels'
 
 contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -101,6 +103,24 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on(API_PROGRESS, handler as Parameters<typeof ipcRenderer.on>[1])
     return (): void => {
       ipcRenderer.removeListener(API_PROGRESS, handler as Parameters<typeof ipcRenderer.removeListener>[1])
+    }
+  },
+
+  // Watcher events
+  onWatcherChange: (callback: (...args: unknown[]) => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on(WATCHER_CHANGE, handler as Parameters<typeof ipcRenderer.on>[1])
+    return (): void => {
+      ipcRenderer.removeListener(WATCHER_CHANGE, handler as Parameters<typeof ipcRenderer.removeListener>[1])
+    }
+  },
+
+  // Menu action events
+  onMenuAction: (callback: (...args: unknown[]) => void) => {
+    const handler = (_ipcEvent: unknown, action: unknown): void => callback(action)
+    ipcRenderer.on(MENU_ACTION, handler as Parameters<typeof ipcRenderer.on>[1])
+    return (): void => {
+      ipcRenderer.removeListener(MENU_ACTION, handler as Parameters<typeof ipcRenderer.removeListener>[1])
     }
   }
 })

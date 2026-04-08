@@ -129,5 +129,13 @@ export const ipc = {
 
   onApiProgress(callback: (event: ProgressEvent) => void): () => void {
     return window.api.onApiProgress(callback)
+  },
+
+  onWatcherChange(callback: () => void): () => void {
+    return window.api.onWatcherChange(callback)
+  },
+
+  onMenuAction(callback: (action: string) => void): () => void {
+    return window.api.onMenuAction(callback)
   }
 }
