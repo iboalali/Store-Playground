@@ -105,10 +105,10 @@ The application reads and writes exclusively to a designated `Workspace` directo
     │           │   └── 02_home.png
     │           ├── /tablet_7                        <- API type: sevenInchScreenshots
     │           ├── /tablet_10                       <- API type: tenInchScreenshots
-    │           ├── /chromebook                      <- Local only (no API type yet)
+    │           ├── /chromebook                      <- API type: chromebookScreenshots
     │           ├── /tv                              <- API type: tvScreenshots
     │           ├── /wear                            <- API type: wearScreenshots
-    │           └── /android_xr                      <- Local only (no API type yet)
+    │           └── /android_xr                      <- API type: androidXrScreenshots
     ├── /v1.1_Holiday                                <- Current/Live Version Directory
     └── /screenshots                                 <- Screenshot Management Root
         ├── screenshot_config.json                   <- Version order + screen order per version

@@ -83,6 +83,8 @@ export const DIR_TO_API_TYPE: Record<string, string> = {
   phone: 'phoneScreenshots',
   tablet_7: 'sevenInchScreenshots',
   tablet_10: 'tenInchScreenshots',
+  chromebook: 'chromebookScreenshots',
   tv: 'tvScreenshots',
-  wear: 'wearScreenshots'
+  wear: 'wearScreenshots',
+  android_xr: 'androidXrScreenshots'
 }
