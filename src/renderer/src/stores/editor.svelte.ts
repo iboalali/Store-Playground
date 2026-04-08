@@ -13,7 +13,7 @@ export const TEXT_FILE_MAP: { key: keyof LocaleTextFields; fileName: string; max
   { key: 'videoUrl', fileName: 'video_url.txt', maxLength: 0 }
 ]
 
-export const SCREENSHOT_TYPES: ScreenshotType[] = ['phone', 'tablet_7', 'tablet_10', 'tv', 'wear']
+export const SCREENSHOT_TYPES: ScreenshotType[] = ['phone', 'tablet_7', 'tablet_10', 'chromebook', 'tv', 'wear', 'android_xr']
 
 export const IMAGE_FILES = [
   { key: 'icon', fileName: 'high_res_icon.png', label: 'High Res Icon', dimensions: '512x512' },
@@ -25,8 +25,10 @@ export const SCREENSHOT_LABELS: Record<ScreenshotType, string> = {
   phone: 'Phone',
   tablet_7: '7" Tablet',
   tablet_10: '10" Tablet',
+  chromebook: 'Desktop / Chromebook',
   tv: 'TV',
-  wear: 'Wear'
+  wear: 'Wear',
+  android_xr: 'Android XR'
 }
 
 const KNOWN_NON_LOCALE = new Set(['version_metadata.json', 'screenshots', '.DS_Store', 'Thumbs.db'])

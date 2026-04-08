@@ -65,8 +65,10 @@ export const SCREENSHOT_LIMITS: Record<string, { min: number; max: number; requi
   phone: { min: 2, max: 8, requiredWhenPresent: false },
   tablet_7: { min: 4, max: 8, requiredWhenPresent: true },
   tablet_10: { min: 4, max: 8, requiredWhenPresent: true },
+  chromebook: { min: 4, max: 8, requiredWhenPresent: true },
   tv: { min: 1, max: 8, requiredWhenPresent: true },
-  wear: { min: 1, max: 8, requiredWhenPresent: true }
+  wear: { min: 1, max: 8, requiredWhenPresent: true },
+  android_xr: { min: 4, max: 8, requiredWhenPresent: true }
 }
 
 // Non-screenshot image file to API image type mapping
