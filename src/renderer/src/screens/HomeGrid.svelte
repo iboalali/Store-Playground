@@ -19,6 +19,15 @@
     }
   })
 
+  // Listen for menu bar action
+  $effect(() => {
+    function onMenuNewApp(): void {
+      showAddDialog = true
+    }
+    window.addEventListener('menu:new-app', onMenuNewApp)
+    return () => window.removeEventListener('menu:new-app', onMenuNewApp)
+  })
+
   async function handleCreate(appName: string, packageName: string): Promise<void> {
     const wp = settingsStore.workspacePath
     if (!wp) return

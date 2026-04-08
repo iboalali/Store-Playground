@@ -112,6 +112,20 @@ class EditorStore {
     }
   }
 
+  async reload(): Promise<void> {
+    if (!this.appPath || !this.versionDir) return
+    try {
+      await this.loadLocales()
+      if (this.activeLocale && this.locales.includes(this.activeLocale)) {
+        await Promise.all([this.loadTexts(), this.loadImages(), this.loadScreenshots()])
+      } else if (this.locales.length > 0) {
+        await this.loadLocaleData(this.locales[0])
+      }
+    } catch (err) {
+      this.error = String(err)
+    }
+  }
+
   async loadLocales(): Promise<void> {
     if (!this.versionPath) return
     try {

@@ -56,6 +56,8 @@ interface Api {
     mode: string
   }): Promise<IpcResult<void>>
   onApiProgress(callback: (event: ProgressEvent) => void): () => void
+  onWatcherChange(callback: () => void): () => void
+  onMenuAction(callback: (action: string) => void): () => void
 }
 
 declare global {

@@ -32,6 +32,12 @@ export const API_PUBLISH = 'api:publish' as const
 export const API_IMPORT_LIVE = 'api:import-live' as const
 export const API_PROGRESS = 'api:progress' as const
 
+// Watcher channels (Main → Renderer push)
+export const WATCHER_CHANGE = 'watcher:change' as const
+
+// Menu channels (Main → Renderer push)
+export const MENU_ACTION = 'menu:action' as const
+
 // Union of all active IPC channels
 export type IpcChannel =
   | typeof SETTINGS_GET
@@ -58,3 +64,5 @@ export type IpcChannel =
   | typeof API_PUBLISH
   | typeof API_IMPORT_LIVE
   | typeof API_PROGRESS
+  | typeof WATCHER_CHANGE
+  | typeof MENU_ACTION

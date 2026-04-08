@@ -24,6 +24,22 @@
     }
   })
 
+  // Listen for menu bar actions
+  $effect(() => {
+    function onMenuPublish(): void {
+      handlePublish()
+    }
+    function onMenuImport(): void {
+      showImportConfirm = true
+    }
+    window.addEventListener('menu:publish', onMenuPublish)
+    window.addEventListener('menu:import-live', onMenuImport)
+    return () => {
+      window.removeEventListener('menu:publish', onMenuPublish)
+      window.removeEventListener('menu:import-live', onMenuImport)
+    }
+  })
+
   function handleSaveDetails(details: AppDetails): void {
     currentAppStore.saveDetails(details)
   }

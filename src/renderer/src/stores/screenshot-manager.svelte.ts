@@ -71,6 +71,22 @@ class ScreenshotManagerStore {
     }
   }
 
+  async reload(): Promise<void> {
+    if (!this.appPath) return
+    try {
+      await this.loadConfig()
+      if (this.activeVersionName && this.config?.versionOrder.includes(this.activeVersionName)) {
+        await this.loadVersionScreens(this.activeVersionName)
+      } else if (this.config && this.config.versionOrder.length > 0) {
+        await this.loadVersionScreens(this.config.versionOrder[0])
+      } else {
+        this.screens = []
+      }
+    } catch (err) {
+      this.error = String(err)
+    }
+  }
+
   private async ensureScreenshotsDir(): Promise<void> {
     if (!this.screenshotsRoot) return
     await ipc.createDirectory(joinPath(this.screenshotsRoot, 'versions'))
