@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 function unwrap<T>(result: IpcResult<T>): T {
@@ -125,6 +125,33 @@ export const ipc = {
     mode: string
   }): Promise<void> {
     return unwrap(await window.api.importLive(args))
+  },
+
+  // Reports
+  async importCsv(csvPath: string, workspacePath: string): Promise<ImportSummary> {
+    return unwrap(await window.api.importCsv({ csvPath, workspacePath }))
+  },
+
+  async getReportsIndex(workspacePath: string): Promise<ReportsIndex> {
+    return unwrap(await window.api.getReportsIndex({ workspacePath }))
+  },
+
+  async getReportsMonth(workspacePath: string, monthKey: string): Promise<Transaction[]> {
+    return unwrap(await window.api.getReportsMonth({ workspacePath, monthKey }))
+  },
+
+  async getReportsAggregation(
+    workspacePath: string,
+    monthKeys: string[],
+    appPackageName?: string
+  ): Promise<AggregationResult> {
+    return unwrap(
+      await window.api.getReportsAggregation({ workspacePath, monthKeys, appPackageName })
+    )
+  },
+
+  async deleteReportsMonth(workspacePath: string, monthKey: string): Promise<void> {
+    return unwrap(await window.api.deleteReportsMonth({ workspacePath, monthKey }))
   },
 
   onApiProgress(callback: (event: ProgressEvent) => void): () => void {

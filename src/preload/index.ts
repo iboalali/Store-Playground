@@ -25,6 +25,11 @@ import {
   API_PUBLISH,
   API_IMPORT_LIVE,
   API_PROGRESS,
+  REPORTS_IMPORT_CSV,
+  REPORTS_GET_INDEX,
+  REPORTS_GET_MONTH,
+  REPORTS_GET_AGGREGATION,
+  REPORTS_DELETE_MONTH,
   WATCHER_CHANGE,
   MENU_ACTION
 } from '$shared/types/ipc-channels'
@@ -105,6 +110,21 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.removeListener(API_PROGRESS, handler as Parameters<typeof ipcRenderer.removeListener>[1])
     }
   },
+
+  // Reports
+  importCsv: (args: { csvPath: string; workspacePath: string }) =>
+    ipcRenderer.invoke(REPORTS_IMPORT_CSV, args),
+  getReportsIndex: (args: { workspacePath: string }) =>
+    ipcRenderer.invoke(REPORTS_GET_INDEX, args),
+  getReportsMonth: (args: { workspacePath: string; monthKey: string }) =>
+    ipcRenderer.invoke(REPORTS_GET_MONTH, args),
+  getReportsAggregation: (args: {
+    workspacePath: string
+    monthKeys: string[]
+    appPackageName?: string
+  }) => ipcRenderer.invoke(REPORTS_GET_AGGREGATION, args),
+  deleteReportsMonth: (args: { workspacePath: string; monthKey: string }) =>
+    ipcRenderer.invoke(REPORTS_DELETE_MONTH, args),
 
   // Watcher events
   onWatcherChange: (callback: (...args: unknown[]) => void) => {

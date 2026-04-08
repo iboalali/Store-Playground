@@ -672,6 +672,7 @@ End-to-end verification after Phase 9:
 * Phase 6: Validation Engine ✅ (see `phase-6-plan.md` for detailed implementation plan)
 * Phase 7: Google Play API Integration ✅ (see `phase-7-plan.md` for detailed implementation plan)
 * Phase 8: File Watching, Menu Bar & Polish ✅ (see `phase-8-plan.md` for detailed implementation plan)
+* Phase 9: Financial Reports & Analytics (see `phase-9-plan.md` for detailed implementation plan)
 
 ## Future Work
 * Release notes
