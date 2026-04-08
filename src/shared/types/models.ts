@@ -46,7 +46,7 @@ export interface VersionEntry {
 
 // --- Phase 5: Store Listing Editor types ---
 
-export type ScreenshotType = 'phone' | 'tablet_7' | 'tablet_10' | 'tv' | 'wear'
+export type ScreenshotType = 'phone' | 'tablet_7' | 'tablet_10' | 'chromebook' | 'tv' | 'wear' | 'android_xr'
 
 export interface LocaleTextFields {
   title: string
