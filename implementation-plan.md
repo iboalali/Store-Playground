@@ -60,6 +60,7 @@ Store-Playground/
 │           │   ├── current-app.svelte.ts  # Selected app + versions
 │           │   ├── editor.svelte.ts       # Active listing: locales, texts, images, dirty flags
 │           │   ├── screenshot-manager.svelte.ts  # Screenshot versions, screens, variants, drag, undo
+│           │   ├── release-notes.svelte.ts   # Release notes versions, languages, generate output
 │           │   ├── reports.svelte.ts      # Financial reports state, filters, aggregations
 │           │   ├── settings.svelte.ts     # Settings mirror
 │           │   └── progress.svelte.ts     # Publish/import progress + errors
@@ -69,6 +70,7 @@ Store-Playground/
 │           │   ├── StoreListingEditor.svelte
 │           │   ├── ScreenshotManager.svelte   # Screenshot library management
 │           │   ├── FinancialReports.svelte    # Revenue analytics dashboard
+│           │   ├── ReleaseNotesManager.svelte # Release notes management
 │           │   └── Settings.svelte
 │           ├── components/
 │           │   ├── layout/
@@ -105,6 +107,11 @@ Store-Playground/
 │           │   │   ├── CountryBreakdown.svelte   # Ranked list or table by buyer country
 │           │   │   ├── ProductBreakdown.svelte   # Revenue breakdown by product/SKU
 │           │   │   └── TransactionTable.svelte   # Paginated table of individual transactions
+│           │   ├── release-notes/
+│           │   │   ├── VersionSelector.svelte    # Version tab bar + action buttons
+│           │   │   ├── LanguageEntry.svelte      # Single language textarea + char count
+│           │   │   ├── LanguageList.svelte        # Vertical list of language entries
+│           │   │   └── GenerateDialog.svelte      # Preflight + output + copy dialog
 │           │   └── shared/
 │           │       ├── ConfirmDialog.svelte
 │           │       ├── Button.svelte
@@ -643,7 +650,7 @@ After each phase, verify by:
 3. `npx svelte-check` — no type errors in renderer
 4. `npx tsc --noEmit -p tsconfig.node.json` — no type errors in main/preload
 
-End-to-end verification after Phase 9:
+End-to-end verification after Phase 10:
 1. Launch app -> Settings -> set workspace path -> Home Grid shows apps
 2. Add App -> appears in grid -> click -> Dashboard loads
 3. Create/Duplicate/Rename/Archive/Delete versions
@@ -661,6 +668,9 @@ End-to-end verification after Phase 9:
 15. Switch month range -> all views update -> switch to "All Apps" -> shows combined data
 16. Keyboard shortcuts and menu bar all functional
 17. Package with electron-builder -> built app launches correctly
+18. Dashboard -> Release Notes -> create version -> add languages -> edit text -> auto-saves
+19. Duplicate/rename/delete release note versions and languages
+20. Generate output -> preflight warnings -> formatted Play Console tags -> copy to clipboard
 
 ## Completed Phases
 * Phase 1: Project Scaffolding ✅ (see `phase-1-plan.md` for detailed implementation plan)
@@ -672,8 +682,38 @@ End-to-end verification after Phase 9:
 * Phase 6: Validation Engine ✅ (see `phase-6-plan.md` for detailed implementation plan)
 * Phase 7: Google Play API Integration ✅ (see `phase-7-plan.md` for detailed implementation plan)
 * Phase 8: File Watching, Menu Bar & Polish ✅ (see `phase-8-plan.md` for detailed implementation plan)
-* Phase 9: Financial Reports & Analytics (see `phase-9-plan.md` for detailed implementation plan)
+* Phase 9: Financial Reports & Analytics ✅ (see `phase-9-plan.md` for detailed implementation plan)
+* Phase 10: Release Notes Manager ✅ (see `phase-10-plan.md` for detailed implementation plan)
+
+### Phase 10: Release Notes Manager
+**Goal:** A dedicated release notes management page with version/language CRUD and Play Console output generation
+
+- Add `ReleaseNotesConfig`, `ReleaseNoteEntry`, `PreflightWarning` types to `src/shared/types/models.ts`
+- Add `release-notes` route to `router.svelte.ts` + `goToReleaseNotes()` navigation function
+- Create `src/renderer/src/stores/release-notes.svelte.ts` — class-based singleton store:
+  - Version CRUD: add (empty), duplicate (deep copy), rename, delete
+  - Language CRUD: add (from locale selector), duplicate (copy text to new locale), delete
+  - Text editing with auto-save (blur + 500ms debounce)
+  - Generate output: combines versions newest→oldest per locale until 500-char limit, formats as Play Console tags (`<en-US>text</en-US>`)
+- Create `src/renderer/src/components/release-notes/`:
+  - `VersionSelector.svelte` — tab bar + action buttons (same pattern as screenshots)
+  - `LanguageEntry.svelte` — locale header, textarea, char count (gray/yellow/red), duplicate/delete buttons
+  - `LanguageList.svelte` — vertical list of LanguageEntry components
+  - `GenerateDialog.svelte` — preflight warnings + readonly output + copy-to-clipboard
+- Create `src/renderer/src/screens/ReleaseNotesManager.svelte` — top-level screen
+- Wire into `App.svelte` (route case, watcher refresh) and `AppDashboard.svelte` (navigation button)
+- Reuses existing `LocaleSelector.svelte` and `ConfirmDialog.svelte`
+- No new IPC channels — all operations use existing `fs:*` handlers
+
+**Data Model:**
+```
+/{app_root}/release_notes/
+├── release_notes_config.json             # { versionOrder, versions }
+└── /versions/
+    └── /{version_name}/                  # Independent naming, not tied to listing versions
+        ├── en-US.txt                     # Release note text per BCP-47 locale
+        └── de-DE.txt
+```
 
 ## Future Work
-* Release notes
 * Android XR
