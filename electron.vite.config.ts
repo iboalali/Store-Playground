@@ -23,7 +23,10 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        external: ['sharp']
+        external: ['sharp'],
+        output: {
+          format: 'cjs'
+        }
       }
     }
   },
