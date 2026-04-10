@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell } from 'electron'
+import { app, BrowserWindow, Menu, shell, net, protocol } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { SettingsService } from './services/settings'
@@ -15,6 +15,8 @@ function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
@@ -42,7 +44,15 @@ function createWindow(): BrowserWindow {
   return mainWindow
 }
 
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'local-file', privileges: { bypassCSP: false, supportFetchAPI: true } }
+])
+
 app.whenReady().then(() => {
+  protocol.handle('local-file', (request) => {
+    const filePath = decodeURIComponent(new URL(request.url).pathname)
+    return net.fetch(`file://${filePath}`)
+  })
   // Initialize services
   const settingsService = new SettingsService(app.getPath('userData'))
   const watcherService = new WatcherService()

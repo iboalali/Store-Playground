@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { AppDetails } from '$shared/types/models'
+  import { LOCALE_OPTIONS, LOCALE_NAMES } from '$lib/locale-names'
 
   interface Props {
     details: AppDetails
@@ -13,6 +14,43 @@
   let contactPhone = $state('')
   let privacyPolicyUrl = $state('')
   let saving = $state(false)
+
+  let langSearch = $state('')
+  let langDropdownOpen = $state(false)
+  let langInputEl: HTMLInputElement | undefined = $state()
+
+  const langDisplayValue = $derived(
+    langDropdownOpen ? langSearch : (LOCALE_NAMES[defaultLanguage] ? `${LOCALE_NAMES[defaultLanguage]} (${defaultLanguage})` : defaultLanguage)
+  )
+
+  const filteredLocales = $derived(
+    langSearch
+      ? LOCALE_OPTIONS.filter(
+          (l) =>
+            l.name.toLowerCase().includes(langSearch.toLowerCase()) ||
+            l.tag.toLowerCase().includes(langSearch.toLowerCase())
+        )
+      : LOCALE_OPTIONS
+  )
+
+  function openLangDropdown(): void {
+    langSearch = ''
+    langDropdownOpen = true
+  }
+
+  function selectLocale(tag: string): void {
+    defaultLanguage = tag
+    langDropdownOpen = false
+    langSearch = ''
+  }
+
+  function handleLangBlur(): void {
+    // Delay to allow click on dropdown item
+    setTimeout(() => {
+      langDropdownOpen = false
+      langSearch = ''
+    }, 150)
+  }
 
   // Sync local state when prop changes
   $effect(() => {
@@ -45,10 +83,39 @@
 </script>
 
 <form class="details-form" onsubmit={(e) => { e.preventDefault(); handleSave() }}>
-  <label class="field">
+  <div class="field">
     <span class="label">Default Language</span>
-    <input type="text" bind:value={defaultLanguage} placeholder="en-US" disabled={saving} />
-  </label>
+    <div class="locale-picker">
+      <input
+        bind:this={langInputEl}
+        type="text"
+        value={langDisplayValue}
+        oninput={(e) => { langSearch = (e.target as HTMLInputElement).value }}
+        onfocus={openLangDropdown}
+        onblur={handleLangBlur}
+        placeholder="Search language..."
+        disabled={saving}
+      />
+      {#if langDropdownOpen}
+        <ul class="locale-dropdown">
+          {#each filteredLocales as locale (locale.tag)}
+            <li>
+              <button
+                class="locale-option"
+                class:selected={locale.tag === defaultLanguage}
+                onmousedown={(e) => { e.preventDefault(); selectLocale(locale.tag) }}
+              >
+                <span class="locale-name">{locale.name}</span>
+                <span class="locale-tag">{locale.tag}</span>
+              </button>
+            </li>
+          {:else}
+            <li class="no-results">No matching languages</li>
+          {/each}
+        </ul>
+      {/if}
+    </div>
+  </div>
 
   <label class="field">
     <span class="label">Contact Email</span>
@@ -80,6 +147,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    max-width: 500px;
   }
 
   .field {
@@ -111,6 +179,74 @@
   input:disabled {
     background: #f5f5f5;
     color: #999;
+  }
+
+  .locale-picker {
+    position: relative;
+  }
+
+  .locale-picker input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .locale-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .locale-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    color: #333;
+    text-align: left;
+  }
+
+  .locale-option:hover {
+    background: #f0f7ff;
+  }
+
+  .locale-option.selected {
+    background: #e8f0fe;
+    font-weight: 500;
+  }
+
+  .locale-name {
+    flex: 1;
+  }
+
+  .locale-tag {
+    font-size: 0.75rem;
+    color: #888;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-left: 12px;
+  }
+
+  .no-results {
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    color: #888;
   }
 
   .btn-save {

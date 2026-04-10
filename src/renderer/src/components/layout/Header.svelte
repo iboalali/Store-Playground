@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getRoute, goHome, goSettings, goToDashboard } from '../../router.svelte'
+  import { getRoute, goHome, goSettings, goToDashboard, goToReportsGlobal } from '../../router.svelte'
 
   interface Props {
     appName?: string
@@ -40,27 +40,48 @@
     {:else if route.screen === 'reports'}
       <button class="crumb" onclick={goHome}>Home</button>
       <span class="separator">/</span>
+      <button class="crumb" onclick={() => goToDashboard(route.appPath)}>
+        {appName ?? 'App'}
+      </button>
+      <span class="separator">/</span>
       <span class="crumb active">Financial Reports</span>
+    {:else if route.screen === 'reports-global'}
+      <button class="crumb" onclick={goHome}>Home</button>
+      <span class="separator">/</span>
+      <span class="crumb active">Financial Reports</span>
+    {:else if route.screen === 'release-notes'}
+      <button class="crumb" onclick={goHome}>Home</button>
+      <span class="separator">/</span>
+      <button class="crumb" onclick={() => goToDashboard(route.appPath)}>
+        {appName ?? 'App'}
+      </button>
+      <span class="separator">/</span>
+      <span class="crumb active">Release Notes</span>
     {/if}
   </nav>
 
-  <button class="gear-button" onclick={goSettings} title="Settings">
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <circle cx="10" cy="10" r="3" />
-      <path
-        d="M10 1.5v2M10 16.5v2M3.4 3.4l1.4 1.4M15.2 15.2l1.4 1.4M1.5 10h2M16.5 10h2M3.4 16.6l1.4-1.4M15.2 4.8l1.4-1.4"
-      />
-    </svg>
-  </button>
+  <div class="header-actions">
+    <button class="header-btn" onclick={goToReportsGlobal} title="Financial Reports">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 -960 960 960"
+        fill="currentColor"
+      >
+        <path d="M200-120q-33 0-56.5-23.5T120-200v-640h80v640h640v80H200Zm40-120v-360h160v360H240Zm200 0v-560h160v560H440Zm200 0v-200h160v200H640Z" />
+      </svg>
+    </button>
+    <button class="header-btn" onclick={goSettings} title="Settings">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 -960 960 960"
+        fill="currentColor"
+      >
+        <path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z" />
+      </svg>
+    </button>
+  </div>
 </header>
 
 <style>
@@ -109,7 +130,14 @@
     font-size: 0.875rem;
   }
 
-  .gear-button {
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    -webkit-app-region: no-drag;
+  }
+
+  .header-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -120,10 +148,9 @@
     background: none;
     color: #555;
     cursor: pointer;
-    -webkit-app-region: no-drag;
   }
 
-  .gear-button:hover {
+  .header-btn:hover {
     background: #f0f0f0;
     color: #1a1a1a;
   }

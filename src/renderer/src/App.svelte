@@ -52,6 +52,9 @@
       case 'reports':
         reportsStore.reload()
         break
+      case 'reports-global':
+        reportsStore.reload()
+        break
       case 'release-notes':
         releaseNotesStore.reload()
         break
@@ -137,8 +140,10 @@
     <StoreListingEditor />
   {:else if route.screen === 'screenshots'}
     <ScreenshotManager />
-  {:else if route.screen === 'reports'}
-    <FinancialReports />
+  {:else if route.screen === 'reports' || route.screen === 'reports-global'}
+    {#key route.screen}
+      <FinancialReports />
+    {/key}
   {:else if route.screen === 'release-notes'}
     <ReleaseNotesManager />
   {/if}
