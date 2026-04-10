@@ -12,7 +12,7 @@
 
   let { label, dimensions, filePath, imageTimestamp, validationError = null, onpick, ondelete, onpaste }: Props = $props()
 
-  const imageSrc = $derived(filePath ? `file://${filePath}?t=${imageTimestamp}` : null)
+  const imageSrc = $derived(filePath ? `local-file://${filePath}?t=${imageTimestamp}` : null)
 
   async function handlePaste(e: ClipboardEvent): Promise<void> {
     const items = e.clipboardData?.items

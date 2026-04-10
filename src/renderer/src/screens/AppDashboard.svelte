@@ -102,7 +102,8 @@
         <h1>{currentAppStore.config.appName}</h1>
         <span class="package-name">{currentAppStore.config.packageName}</span>
       </div>
-      <div class="header-actions">
+    </div>
+    <div class="header-actions">
         <button
           class="btn btn-primary"
           onclick={handlePublish}
@@ -131,7 +132,6 @@
         <button class="btn btn-danger" onclick={() => (showDeleteAppConfirm = true)}>
           Delete App
         </button>
-      </div>
     </div>
 
     <ProgressPanel />
@@ -208,8 +208,7 @@
     padding: 24px;
     height: calc(100vh - 48px);
     overflow-y: auto;
-    max-width: 800px;
-    margin: 0 auto;
+    margin: 0;
   }
 
   .status {
@@ -226,11 +225,7 @@
   }
 
   .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .header-info h1 {
@@ -249,7 +244,8 @@
   .header-actions {
     display: flex;
     gap: 8px;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
   }
 
   .btn {

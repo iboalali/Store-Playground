@@ -9,7 +9,7 @@
   let { appEntry }: Props = $props()
 
   let iconSrc = $derived(
-    appEntry.hasIcon ? `file://${appEntry.appPath}/icon.png` : defaultIcon
+    appEntry.hasIcon ? `local-file://${appEntry.appPath}/icon.png` : defaultIcon
   )
 
   function handleImgError(e: Event): void {

@@ -132,7 +132,7 @@
 >
   {#if variant.hasImage}
     <img
-      src="file://{variant.filePath}?t={imageTimestamp}"
+      src="local-file://{variant.filePath}?t={imageTimestamp}"
       alt={variant.displayName}
       class="slot-img"
     />

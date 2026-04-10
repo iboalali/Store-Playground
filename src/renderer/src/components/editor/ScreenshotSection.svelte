@@ -110,7 +110,7 @@
         ondragend={handleDragEnd}
       >
         <img
-          src="file://{screenshot.filePath}?t={imageTimestamp}"
+          src="local-file://{screenshot.filePath}?t={imageTimestamp}"
           alt="{typeLabel} {screenshot.fileName}"
           class="thumb-img"
         />

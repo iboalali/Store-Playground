@@ -335,8 +335,6 @@
     flex: 1;
     overflow-y: auto;
     padding: 24px;
-    max-width: 800px;
-    margin: 0 auto;
     width: 100%;
   }
 

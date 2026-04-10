@@ -76,6 +76,7 @@ class ReportsStore {
 
   async load(appPath: string): Promise<void> {
     this.appPath = appPath
+    this.viewMode = 'app'
     this.loading = true
     this.error = null
 
@@ -109,9 +110,41 @@ class ReportsStore {
     }
   }
 
+  async loadGlobal(): Promise<void> {
+    this.appPath = ''
+    this.currentAppPackage = ''
+    this.viewMode = 'all'
+    this.loading = true
+    this.error = null
+
+    try {
+      const settings = await ipc.getSettings()
+      if (!settings.workspacePath) {
+        throw new Error('No workspace configured')
+      }
+      this.workspacePath = settings.workspacePath
+
+      this.index = await ipc.getReportsIndex(this.workspacePath)
+
+      const available = this.availableMonths
+      this.selectedMonths = available.slice(0, 6)
+
+      if (this.selectedMonths.length > 0) {
+        await this.computeAggregations()
+        await this.loadTransactions()
+      }
+    } catch (err) {
+      this.error = String(err)
+    } finally {
+      this.loading = false
+    }
+  }
+
   async reload(): Promise<void> {
     if (this.appPath) {
       await this.load(this.appPath)
+    } else {
+      await this.loadGlobal()
     }
   }
 

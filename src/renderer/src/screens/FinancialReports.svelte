@@ -10,10 +10,13 @@
   import TransactionTable from '../components/reports/TransactionTable.svelte'
 
   const route = $derived(getRoute())
+  const isGlobal = $derived(route.screen === 'reports-global')
   const appPath = $derived(route.screen === 'reports' ? route.appPath : '')
 
   $effect(() => {
-    if (appPath) {
+    if (isGlobal) {
+      reportsStore.loadGlobal()
+    } else if (appPath) {
       reportsStore.load(appPath)
     }
   })
@@ -25,18 +28,20 @@
     <CsvImporter />
     <div class="toolbar-row">
       <MonthSelector />
-      <div class="view-toggle">
-        <button
-          class="toggle-btn"
-          class:active={reportsStore.viewMode === 'app'}
-          onclick={() => reportsStore.setViewMode('app')}
-        >This App</button>
-        <button
-          class="toggle-btn"
-          class:active={reportsStore.viewMode === 'all'}
-          onclick={() => reportsStore.setViewMode('all')}
-        >All Apps</button>
-      </div>
+      {#if !isGlobal}
+        <div class="view-toggle">
+          <button
+            class="toggle-btn"
+            class:active={reportsStore.viewMode === 'app'}
+            onclick={() => reportsStore.setViewMode('app')}
+          >This App</button>
+          <button
+            class="toggle-btn"
+            class:active={reportsStore.viewMode === 'all'}
+            onclick={() => reportsStore.setViewMode('all')}
+          >All Apps</button>
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -72,8 +77,7 @@
     padding: 24px;
     height: calc(100vh - 48px);
     overflow-y: auto;
-    max-width: 1200px;
-    margin: 0 auto;
+    margin: 0;
   }
 
   .reports-toolbar {

@@ -155,7 +155,7 @@
                   title="Pick {variant.displayName}"
                 >
                   <img
-                    src="file://{variant.filePath}?t={imageTimestamp}"
+                    src="local-file://{variant.filePath}?t={imageTimestamp}"
                     alt={variant.displayName}
                     class="thumb-img"
                   />
