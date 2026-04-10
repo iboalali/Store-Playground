@@ -4,7 +4,8 @@ import type { Settings } from '$shared/types/models'
 
 const DEFAULT_SETTINGS: Settings = {
   workspacePath: null,
-  serviceAccountKeyPath: null
+  serviceAccountKeyPath: null,
+  playConsoleBucketId: null
 }
 
 const SETTINGS_FILENAME = 'settings.json'

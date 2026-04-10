@@ -13,6 +13,22 @@ A desktop application for managing Google Play Store listing assets. It provides
 - **Google Play API integration** -- Connect with a service account to sync listings
 - **Live reload** -- Workspace changes made outside the app are picked up automatically via file watching
 
+## Finance Report Download Setup
+
+The app can automatically download earnings reports from your Google Play Console. This requires:
+
+1. **Service Account Key** — The same Google Cloud Service Account JSON key used for publishing. Configure it in the app under **Settings > Service Account Key**.
+
+2. **GCS Bucket Access** — Grant the service account the **`Storage Object Viewer`** role on your Play Console earnings bucket:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/) > Cloud Storage > Buckets
+   - Find your Play Console bucket (named `pubsite_prod_rev_<YOUR_DEVELOPER_ID>`)
+   - Under **Permissions**, click **Grant Access**
+   - Add your service account email and assign the **Storage Object Viewer** role
+
+3. **Bucket Name** — Find your bucket name in **Google Play Console > Download reports > Financial > Copy Cloud Storage URI**. The bucket name looks like `pubsite_prod_rev_01234567890123456789`. Enter it in the app under **Settings > Play Console Bucket**.
+
+Once configured, go to any app's **Financial Reports** page and click **Download from Play Console** to automatically fetch new earnings data.
+
 ## Tech Stack
 
 - [Electron](https://www.electronjs.org/) 33 -- desktop shell

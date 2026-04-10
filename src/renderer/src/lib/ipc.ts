@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult, EarningsReportInfo, DownloadRemoteResult } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 function unwrap<T>(result: IpcResult<T>): T {
@@ -156,6 +156,25 @@ export const ipc = {
 
   async deleteReportsMonth(workspacePath: string, monthKey: string): Promise<void> {
     return unwrap(await window.api.deleteReportsMonth({ workspacePath, monthKey }))
+  },
+
+  async listRemoteReports(
+    serviceAccountKeyPath: string,
+    bucketId: string
+  ): Promise<EarningsReportInfo[]> {
+    return unwrap(
+      await window.api.listRemoteReports({ serviceAccountKeyPath, bucketId })
+    )
+  },
+
+  async downloadRemoteReports(
+    serviceAccountKeyPath: string,
+    bucketId: string,
+    workspacePath: string
+  ): Promise<DownloadRemoteResult> {
+    return unwrap(
+      await window.api.downloadRemoteReports({ serviceAccountKeyPath, bucketId, workspacePath })
+    )
   },
 
   onApiProgress(callback: (event: ProgressEvent) => void): () => void {

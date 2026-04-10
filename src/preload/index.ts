@@ -31,6 +31,8 @@ import {
   REPORTS_GET_MONTH,
   REPORTS_GET_AGGREGATION,
   REPORTS_DELETE_MONTH,
+  REPORTS_LIST_REMOTE,
+  REPORTS_DOWNLOAD_REMOTE,
   WATCHER_CHANGE,
   MENU_ACTION
 } from '$shared/types/ipc-channels'
@@ -127,6 +129,13 @@ contextBridge.exposeInMainWorld('api', {
   }) => ipcRenderer.invoke(REPORTS_GET_AGGREGATION, args),
   deleteReportsMonth: (args: { workspacePath: string; monthKey: string }) =>
     ipcRenderer.invoke(REPORTS_DELETE_MONTH, args),
+  listRemoteReports: (args: { serviceAccountKeyPath: string; bucketId: string }) =>
+    ipcRenderer.invoke(REPORTS_LIST_REMOTE, args),
+  downloadRemoteReports: (args: {
+    serviceAccountKeyPath: string
+    bucketId: string
+    workspacePath: string
+  }) => ipcRenderer.invoke(REPORTS_DOWNLOAD_REMOTE, args),
 
   // Watcher events
   onWatcherChange: (callback: (...args: unknown[]) => void) => {
