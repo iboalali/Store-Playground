@@ -2,7 +2,8 @@ import { ipc } from '$lib/ipc'
 import type {
   ReportsIndex,
   Transaction,
-  AggregationResult
+  AggregationResult,
+  DownloadRemoteResult
 } from '$shared/types/models'
 
 class ReportsStore {
@@ -16,6 +17,8 @@ class ReportsStore {
   error: string | null = $state(null)
   importing = $state(false)
   importerExpanded = $state(false)
+  downloading = $state(false)
+  downloadResult: DownloadRemoteResult | null = $state(null)
   viewMode: 'app' | 'all' = $state('app')
 
   // Transaction table state
@@ -199,6 +202,49 @@ class ReportsStore {
       }
     } catch (err) {
       this.error = String(err)
+    }
+  }
+
+  async downloadFromPlayConsole(): Promise<void> {
+    this.downloading = true
+    this.downloadResult = null
+    this.error = null
+
+    try {
+      const settings = await ipc.getSettings()
+      if (!settings.serviceAccountKeyPath) {
+        throw new Error('Service account key not configured. Go to Settings to set it up.')
+      }
+      if (!settings.playConsoleBucketId) {
+        throw new Error('Play Console bucket not configured. Go to Settings to set it up.')
+      }
+      if (!this.workspacePath) {
+        throw new Error('No workspace configured')
+      }
+
+      const result = await ipc.downloadRemoteReports(
+        settings.serviceAccountKeyPath,
+        settings.playConsoleBucketId,
+        this.workspacePath
+      )
+      this.downloadResult = result
+
+      // Reload index and refresh views
+      this.index = await ipc.getReportsIndex(this.workspacePath)
+
+      const available = this.availableMonths
+      if (this.selectedMonths.length === 0) {
+        this.selectedMonths = available.slice(0, 6)
+      }
+
+      if (this.selectedMonths.length > 0) {
+        await this.computeAggregations()
+        await this.loadTransactions()
+      }
+    } catch (err) {
+      this.error = String(err)
+    } finally {
+      this.downloading = false
     }
   }
 

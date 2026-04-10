@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult } from './models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult, EarningsReportInfo, DownloadRemoteResult } from './models'
 
 // Generic result wrapper — every IPC handler returns this
 export type IpcResult<T> =
@@ -192,6 +192,21 @@ export interface ReportsDeleteMonthRequest {
   monthKey: string
 }
 export type ReportsDeleteMonthResponse = IpcResult<void>
+
+// reports:list-remote — list available earnings reports in GCS bucket
+export interface ReportsListRemoteRequest {
+  serviceAccountKeyPath: string
+  bucketId: string
+}
+export type ReportsListRemoteResponse = IpcResult<EarningsReportInfo[]>
+
+// reports:download-remote — download new earnings reports from GCS and import them
+export interface ReportsDownloadRemoteRequest {
+  serviceAccountKeyPath: string
+  bucketId: string
+  workspacePath: string
+}
+export type ReportsDownloadRemoteResponse = IpcResult<DownloadRemoteResult>
 
 // Menu action names dispatched from main menu to renderer
 export type MenuAction =

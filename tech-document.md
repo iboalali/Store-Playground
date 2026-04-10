@@ -11,7 +11,8 @@ A local-first, Electron-based desktop application for managing Google Play Store
 * **Frontend:** Svelte (compiled, lightweight — minimal runtime overhead for Electron)
 * **Image Processing:** `sharp` or `image-size` (for dimension validation)
 * **File Watching:** `chokidar` (for real-time detection of external file changes)
-* **Google API:** `googleapis` (specifically the Google Play Android Developer API `v3`)
+* **Google API:** `googleapis` (Google Play Android Developer API `v3` for store listings, Google Cloud Storage JSON API `v1` for finance report downloads)
+* **ZIP Extraction:** `adm-zip` (for extracting compressed earnings report archives from GCS)
 * **Build/Packaging:** `electron-builder` (for cross-platform distribution)
 
 ## 3. Electron IPC Architecture
@@ -54,6 +55,8 @@ Channels are grouped by domain. All calls from the Renderer use `ipcRenderer.inv
 * `reports:get-month` — Read parsed transactions for a given month key
 * `reports:get-aggregation` — Compute monthly/country/product aggregations with optional app filter
 * `reports:delete-month` — Remove a month's data (parsed JSON + raw CSV) and update index
+* `reports:list-remote` — List available earnings reports in the configured GCS bucket
+* `reports:download-remote` — Download new earnings reports from GCS and import via the existing CSV pipeline
 
 **Google Play API (Renderer → Main):**
 * `api:publish` — Execute the full publish transaction flow
@@ -343,8 +346,9 @@ v1.0: Initial release with core features.
 
 * **Access:** Available via a gear icon in the application header, accessible from any screen.
 * **Workspace Path (Required):** A directory picker for the workspace root. The Home Grid is inaccessible until a valid workspace path is set.
-* **Service Account Key Path (Optional):** A file picker for the Google Cloud Service Account JSON key. Required only for Publish and Import operations. If not set, API-dependent buttons are disabled with a tooltip explaining why.
-* **Storage:** Settings are persisted as a JSON file in Electron's `app.getPath('userData')` directory (OS-specific user data location).
+* **Service Account Key Path (Optional):** A file picker for the Google Cloud Service Account JSON key. Required only for Publish, Import, and Finance Download operations. If not set, API-dependent buttons are disabled with a tooltip explaining why.
+* **Play Console Bucket (Optional):** A text input for the GCS bucket name where Play Console deposits earnings reports (e.g. `pubsite_prod_rev_01234567890`). Found in Play Console under Download reports > Financial > Cloud Storage URI. Required for automatic finance report downloads.
+* **Storage:** Settings are persisted as a JSON file in Electron's `app.getPath('userData')` directory (OS-specific user data location). Schema: `{ workspacePath: string | null, serviceAccountKeyPath: string | null, playConsoleBucketId: string | null }`.
 * **Reset Everything:** A "Danger Zone" section at the bottom of the Settings page provides a "Reset Everything" button. Clicking it opens a confirmation dialog (danger-styled) warning the user that all workspace contents will be moved to the OS trash and settings will be cleared. On confirmation, the backend trashes all top-level entries inside the workspace directory via `shell.trashItem()`, stops the file watcher, and resets the settings file to defaults (`workspacePath: null`, `serviceAccountKeyPath: null`). The app then returns to the initial unconfigured Settings screen. This is useful for testing and starting fresh. The IPC channel used is `settings:reset-all` (no arguments, returns void).
 
 ### Screen 1: Home (App Grid)
@@ -452,12 +456,19 @@ When an app has no `screenshots/` directory yet, the page shows a welcome messag
 ### Screen 5: Financial Reports
 
 * **Access:** A "Financial Reports" button on the App Dashboard, alongside "Screenshot Manager". Breadcrumb: Home > App Name > Financial Reports.
-* **Purpose:** A per-app revenue analytics dashboard driven by manually imported Google Play Console earnings CSV files. Since the Google Play Developer API does not expose financial data, users export CSVs from the Play Console and import them into the app.
+* **Purpose:** A per-app revenue analytics dashboard driven by Google Play Console earnings CSV files. Reports can be downloaded directly from the Play Console's GCS bucket or imported manually. Since the Google Play Developer API does not expose financial data, earnings reports are accessed via the Google Cloud Storage JSON API.
 * **Data location:** Reports are stored at the **workspace level** (`{workspace}/reports/`), not per-app, because a single CSV contains all apps. The UI filters by `Product id` (package name) for per-app views.
 
-#### CSV Import
+#### GCS Download (Automatic)
 
-* **Action (Import CSV):** A collapsible "Import" section at the top of the page provides a drop zone and file picker for CSV files. Multiple CSVs can be imported at once.
+* **Action (Download from Play Console):** A "Download from Play Console" button at the top of the Import section. Requires both `serviceAccountKeyPath` and `playConsoleBucketId` to be configured in Settings.
+* **Download flow:** The backend uses the Google Cloud Storage JSON API to list objects in the `earnings/` prefix of the configured GCS bucket. It compares available months against the local `reports_index.json` to identify new reports. New reports are downloaded to a temp directory, extracted from ZIP if needed (using `adm-zip`), and fed through the existing `importCsv()` pipeline. A summary is returned: `{ imported, skipped, errors }`.
+* **Incremental:** Already-imported months are automatically skipped. Running download multiple times is safe and idempotent.
+* **Prerequisites:** The service account needs the `Storage Object Viewer` IAM role on the GCS bucket. The bucket name must be configured in Settings.
+
+#### CSV Import (Manual)
+
+* **Action (Import CSV):** A collapsible "Import" section provides a drop zone and file picker for CSV files below the automatic download button. Multiple CSVs can be imported at once. This serves as a fallback when GCS access is not configured.
 * **Import flow:** The backend parses the CSV, auto-detects the month from the transaction dates, normalizes column names and types, writes a parsed JSON file to `/reports/parsed/{month}.json`, copies the raw CSV to `/reports/csv/`, and updates `reports_index.json`. If a month is re-imported, the old parsed data is replaced.
 * **Import summary:** After import, the UI shows: rows parsed, month detected, apps found, and any parse errors.
 
@@ -603,7 +614,11 @@ Long-running operations (Publish, Import) display an inline progress section in 
 
 ### 9.1 Authentication
 
-The application requires a **Google Cloud Service Account JSON Key**. The service account must be invited as a user in the Google Play Console with at least the **"Manage store presence"** permission (`CAN_MANAGE_PUBLIC_LISTING_GLOBAL`). The OAuth scope used is `https://www.googleapis.com/auth/androidpublisher`. The path to the key file is configured in the application's Settings page (see Section 6).
+The application requires a **Google Cloud Service Account JSON Key**. The service account must be invited as a user in the Google Play Console with at least the **"Manage store presence"** permission (`CAN_MANAGE_PUBLIC_LISTING_GLOBAL`). The path to the key file is configured in the application's Settings page (see Section 6).
+
+**OAuth scopes:**
+* `https://www.googleapis.com/auth/androidpublisher` — Used for Publish and Import Live Data operations via the Android Publisher API `v3`.
+* `https://www.googleapis.com/auth/devstorage.read_only` — Used for downloading earnings reports from the Play Console's GCS bucket via the Cloud Storage JSON API `v1`. The service account additionally needs the **`Storage Object Viewer`** IAM role on the GCS bucket (`gs://pubsite_prod_rev_<DEVELOPER_ID>`).
 
 ### 9.2 The Publish Transaction Flow (Write)
 

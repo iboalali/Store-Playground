@@ -4,6 +4,7 @@ import type { Settings } from '$shared/types/models'
 class SettingsStore {
   workspacePath = $state<string | null>(null)
   serviceAccountKeyPath = $state<string | null>(null)
+  playConsoleBucketId = $state<string | null>(null)
   loaded = $state(false)
   error = $state<string | null>(null)
 
@@ -14,6 +15,7 @@ class SettingsStore {
       const settings = await ipc.getSettings()
       this.workspacePath = settings.workspacePath
       this.serviceAccountKeyPath = settings.serviceAccountKeyPath
+      this.playConsoleBucketId = settings.playConsoleBucketId
       this.loaded = true
       this.error = null
     } catch (err) {
@@ -51,6 +53,16 @@ class SettingsStore {
     }
   }
 
+  async setPlayConsoleBucketId(id: string): Promise<void> {
+    try {
+      const updated = await ipc.setSettings({ playConsoleBucketId: id || null })
+      this.playConsoleBucketId = updated.playConsoleBucketId
+      this.error = null
+    } catch (err) {
+      this.error = String(err)
+    }
+  }
+
   async pickServiceAccountKey(): Promise<void> {
     const path = await ipc.openFileDialog({
       title: 'Select Service Account Key',
@@ -66,6 +78,7 @@ class SettingsStore {
       await ipc.resetAll()
       this.workspacePath = null
       this.serviceAccountKeyPath = null
+      this.playConsoleBucketId = null
       this.error = null
     } catch (err) {
       this.error = String(err)

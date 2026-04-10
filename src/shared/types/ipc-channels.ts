@@ -42,6 +42,8 @@ export const REPORTS_GET_INDEX = 'reports:get-index' as const
 export const REPORTS_GET_MONTH = 'reports:get-month' as const
 export const REPORTS_GET_AGGREGATION = 'reports:get-aggregation' as const
 export const REPORTS_DELETE_MONTH = 'reports:delete-month' as const
+export const REPORTS_LIST_REMOTE = 'reports:list-remote' as const
+export const REPORTS_DOWNLOAD_REMOTE = 'reports:download-remote' as const
 
 // Menu channels (Main → Renderer push)
 export const MENU_ACTION = 'menu:action' as const
@@ -78,5 +80,7 @@ export type IpcChannel =
   | typeof REPORTS_GET_MONTH
   | typeof REPORTS_GET_AGGREGATION
   | typeof REPORTS_DELETE_MONTH
+  | typeof REPORTS_LIST_REMOTE
+  | typeof REPORTS_DOWNLOAD_REMOTE
   | typeof WATCHER_CHANGE
   | typeof MENU_ACTION

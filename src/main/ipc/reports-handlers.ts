@@ -4,7 +4,9 @@ import {
   REPORTS_GET_INDEX,
   REPORTS_GET_MONTH,
   REPORTS_GET_AGGREGATION,
-  REPORTS_DELETE_MONTH
+  REPORTS_DELETE_MONTH,
+  REPORTS_LIST_REMOTE,
+  REPORTS_DOWNLOAD_REMOTE
 } from '$shared/types/ipc-channels'
 import type {
   ReportsImportCsvRequest,
@@ -12,10 +14,13 @@ import type {
   ReportsGetMonthRequest,
   ReportsGetAggregationRequest,
   ReportsDeleteMonthRequest,
+  ReportsListRemoteRequest,
+  ReportsDownloadRemoteRequest,
   IpcResult
 } from '$shared/types/ipc-payloads'
-import type { ImportSummary, ReportsIndex, Transaction, AggregationResult } from '$shared/types/models'
+import type { ImportSummary, ReportsIndex, Transaction, AggregationResult, EarningsReportInfo, DownloadRemoteResult } from '$shared/types/models'
 import * as reports from '../services/reports'
+import { listEarningsReports, downloadAndImportNewReports } from '../services/google-play/finance-download'
 
 export function registerReportsHandlers(): void {
   ipcMain.handle(
@@ -76,6 +81,34 @@ export function registerReportsHandlers(): void {
       try {
         await reports.deleteMonth(args.workspacePath, args.monthKey)
         return { success: true, data: undefined }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    REPORTS_LIST_REMOTE,
+    async (_event, args: ReportsListRemoteRequest): Promise<IpcResult<EarningsReportInfo[]>> => {
+      try {
+        const result = await listEarningsReports(args.serviceAccountKeyPath, args.bucketId)
+        return { success: true, data: result }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    REPORTS_DOWNLOAD_REMOTE,
+    async (_event, args: ReportsDownloadRemoteRequest): Promise<IpcResult<DownloadRemoteResult>> => {
+      try {
+        const result = await downloadAndImportNewReports(
+          args.serviceAccountKeyPath,
+          args.bucketId,
+          args.workspacePath
+        )
+        return { success: true, data: result }
       } catch (err) {
         return { success: false, error: String(err) }
       }

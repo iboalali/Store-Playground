@@ -1,4 +1,4 @@
-import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult } from '$shared/types/models'
+import type { Settings, AppConfig, AppDetails, AppEntry, VersionEntry, DirectoryEntry, ValidationReport, ProgressEvent, ImportSummary, ReportsIndex, Transaction, AggregationResult, EarningsReportInfo, DownloadRemoteResult } from '$shared/types/models'
 import type { IpcResult } from '$shared/types/ipc-payloads'
 
 interface Api {
@@ -66,6 +66,15 @@ interface Api {
     appPackageName?: string
   }): Promise<IpcResult<AggregationResult>>
   deleteReportsMonth(args: { workspacePath: string; monthKey: string }): Promise<IpcResult<void>>
+  listRemoteReports(args: {
+    serviceAccountKeyPath: string
+    bucketId: string
+  }): Promise<IpcResult<EarningsReportInfo[]>>
+  downloadRemoteReports(args: {
+    serviceAccountKeyPath: string
+    bucketId: string
+    workspacePath: string
+  }): Promise<IpcResult<DownloadRemoteResult>>
 
   onApiProgress(callback: (event: ProgressEvent) => void): () => void
   onWatcherChange(callback: () => void): () => void

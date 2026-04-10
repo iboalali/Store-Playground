@@ -5,6 +5,11 @@
 
   let showResetConfirm = $state(false)
   let resetting = $state(false)
+  let bucketInput = $state(settingsStore.playConsoleBucketId ?? '')
+
+  $effect(() => {
+    bucketInput = settingsStore.playConsoleBucketId ?? ''
+  })
 
   async function handleResetAll(): Promise<void> {
     showResetConfirm = false
@@ -53,6 +58,25 @@
         <button class="browse-button" onclick={() => settingsStore.pickServiceAccountKey()}>
           Browse...
         </button>
+      </div>
+    </section>
+
+    <section class="setting-group">
+      <h2 class="setting-label">Play Console Bucket</h2>
+      <p class="setting-description">
+        The GCS bucket name for your Play Console earnings reports
+        (e.g. pubsite_prod_rev_01234567890). Found in Play Console under
+        Download reports &gt; Financial &gt; Copy Cloud Storage URI.
+      </p>
+      <div class="setting-row">
+        <input
+          class="setting-input"
+          type="text"
+          placeholder="pubsite_prod_rev_..."
+          bind:value={bucketInput}
+          onblur={() => settingsStore.setPlayConsoleBucketId(bucketInput)}
+          onkeydown={(e) => e.key === 'Enter' && settingsStore.setPlayConsoleBucketId(bucketInput)}
+        />
       </div>
     </section>
 
@@ -166,6 +190,28 @@
   }
 
   .setting-value.placeholder {
+    color: #999;
+    font-style: italic;
+  }
+
+  .setting-input {
+    flex: 1;
+    font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+    font-size: 0.8125rem;
+    color: #1a1a1a;
+    background: #fff;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    padding: 6px 10px;
+  }
+
+  .setting-input:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+  }
+
+  .setting-input::placeholder {
     color: #999;
     font-style: italic;
   }

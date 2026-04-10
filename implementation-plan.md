@@ -33,7 +33,8 @@ Store-Playground/
 │   │   │       ├── auth.ts                # Service account auth + client caching
 │   │   │       ├── publish.ts             # Publish transaction flow
 │   │   │       ├── import.ts              # Import live data flow
-│   │   │       └── image-diff.ts          # SHA-256 smart diff logic
+│   │   │       ├── image-diff.ts          # SHA-256 smart diff logic
+│   │   │       └── finance-download.ts    # GCS earnings report download + import
 │   │   ├── menu.ts                        # Menu bar template + shortcuts
 │   │   └── constants.ts                   # BCP-47 locales, text limits, image specs
 │   │
@@ -640,6 +641,62 @@ export interface ProductAggregation {
 10. Build TransactionTable with pagination + filtering
 11. Wire FinancialReports.svelte screen, add navigation from AppDashboard
 
+### Phase 11: Play Console Finance Download
+**Goal:** Direct download of earnings reports from Google Play Console's GCS bucket, eliminating manual CSV export
+
+Google Play deposits monthly earnings reports as CSV/ZIP files in a GCS bucket (`gs://pubsite_prod_rev_<DEVELOPER_ID>/earnings/`). This phase adds a one-click "Download from Play Console" flow that lists available reports, identifies new months, downloads them, and feeds them through the existing `importCsv` pipeline.
+
+**New dependency:** `adm-zip` (ZIP extraction for compressed earnings files)
+
+**Settings:**
+- Add `playConsoleBucketId: string | null` to `Settings` interface and defaults
+- Add text input for bucket name in `Settings.svelte`
+- Update `settingsStore` with `playConsoleBucketId` field and `setPlayConsoleBucketId()` method
+
+**Auth:**
+- Add `getStorageClient(keyPath)` to `src/main/services/google-play/auth.ts`
+- Scope: `https://www.googleapis.com/auth/devstorage.read_only`
+- Cache separately from the existing androidpublisher client
+
+**New service — `src/main/services/google-play/finance-download.ts`:**
+- `listEarningsReports(keyPath, bucketId)` — lists objects in `earnings/` prefix, extracts month keys from filenames
+- `downloadAndImportNewReports(keyPath, bucketId, workspacePath)` — orchestrator:
+  1. Lists remote reports
+  2. Compares against local index to find new months
+  3. Downloads new reports to temp directory
+  4. Extracts ZIPs if needed
+  5. Calls existing `importCsv()` for each CSV
+  6. Returns `{ imported, skipped, errors }`
+
+**New IPC channels:**
+- `reports:list-remote` — list available earnings reports in GCS bucket
+- `reports:download-remote` — download new reports and import them
+
+**New shared types:**
+- `EarningsReportInfo { objectName, monthKey, sizeBytes }`
+- `DownloadRemoteResult { imported, skipped, errors }`
+
+**UI changes:**
+- `CsvImporter.svelte` — add "Download from Play Console" button above the manual drop zone, with status messages and error display
+- Existing manual CSV import remains as fallback
+
+**Files modified:**
+- `package.json` — add `adm-zip`
+- `src/shared/types/models.ts` — add `playConsoleBucketId` to Settings, add new types
+- `src/shared/types/ipc-channels.ts` — add 2 new channels
+- `src/shared/types/ipc-payloads.ts` — add 2 new request/response types
+- `src/main/services/settings.ts` — add default
+- `src/main/services/google-play/auth.ts` — add `getStorageClient()`
+- `src/main/services/google-play/finance-download.ts` — **new file**
+- `src/main/ipc/reports-handlers.ts` — add 2 new handlers
+- `src/preload/index.ts` — add 2 new bridge methods
+- `src/renderer/src/env.d.ts` — add 2 new Api methods
+- `src/renderer/src/lib/ipc.ts` — add 2 new wrapper methods
+- `src/renderer/src/stores/settings.svelte.ts` — add bucket ID state + methods
+- `src/renderer/src/stores/reports.svelte.ts` — add download state + method
+- `src/renderer/src/screens/Settings.svelte` — add bucket ID input section
+- `src/renderer/src/components/reports/CsvImporter.svelte` — add download button + states
+
 ---
 
 ## Verification
@@ -671,6 +728,8 @@ End-to-end verification after Phase 10:
 18. Dashboard -> Release Notes -> create version -> add languages -> edit text -> auto-saves
 19. Duplicate/rename/delete release note versions and languages
 20. Generate output -> preflight warnings -> formatted Play Console tags -> copy to clipboard
+21. Settings -> enter Play Console bucket name -> Financial Reports -> "Download from Play Console" -> new months imported automatically
+22. Click download again -> "0 imported, N skipped" (incremental, no duplicates)
 
 ## Completed Phases
 * Phase 1: Project Scaffolding ✅ (see `phase-1-plan.md` for detailed implementation plan)
@@ -684,6 +743,7 @@ End-to-end verification after Phase 10:
 * Phase 8: File Watching, Menu Bar & Polish ✅ (see `phase-8-plan.md` for detailed implementation plan)
 * Phase 9: Financial Reports & Analytics ✅ (see `phase-9-plan.md` for detailed implementation plan)
 * Phase 10: Release Notes Manager ✅ (see `phase-10-plan.md` for detailed implementation plan)
+* Phase 11: Play Console Finance Download ✅ (see `phase-11-plan.md` for detailed implementation plan)
 
 ### Phase 10: Release Notes Manager
 **Goal:** A dedicated release notes management page with version/language CRUD and Play Console output generation

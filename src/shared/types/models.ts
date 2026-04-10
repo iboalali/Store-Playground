@@ -2,6 +2,7 @@
 export interface Settings {
   workspacePath: string | null
   serviceAccountKeyPath: string | null
+  playConsoleBucketId: string | null
 }
 
 // Per-app config stored in {appRoot}/app_config.json
@@ -214,6 +215,20 @@ export interface AggregationResult {
   monthly: MonthlyAggregation[]
   byCountry: CountryAggregation[]
   byProduct: ProductAggregation[]
+}
+
+// --- Phase 11: Play Console Finance Download types ---
+
+export interface EarningsReportInfo {
+  objectName: string
+  monthKey: string
+  sizeBytes: number
+}
+
+export interface DownloadRemoteResult {
+  imported: number
+  skipped: number
+  errors: string[]
 }
 
 // --- Phase 10: Release Notes Manager types ---

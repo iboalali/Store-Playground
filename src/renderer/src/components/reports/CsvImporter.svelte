@@ -4,6 +4,7 @@
 
   let dragOver = $state(false)
   let importMessage = $state('')
+  let downloadMessage = $state('')
 
   async function handleFilePick(): Promise<void> {
     const path = await ipc.openFileDialog({
@@ -41,6 +42,19 @@
     await reportsStore.deleteMonth(monthKey)
   }
 
+  async function handleDownloadFromPlayConsole(): Promise<void> {
+    downloadMessage = ''
+    await reportsStore.downloadFromPlayConsole()
+    const result = reportsStore.downloadResult
+    if (result) {
+      const parts: string[] = []
+      if (result.imported > 0) parts.push(`${result.imported} new month${result.imported !== 1 ? 's' : ''} imported`)
+      if (result.skipped > 0) parts.push(`${result.skipped} already up to date`)
+      if (result.errors.length > 0) parts.push(`${result.errors.length} error${result.errors.length !== 1 ? 's' : ''}`)
+      downloadMessage = parts.join(', ')
+    }
+  }
+
   function formatMonthKey(key: string): string {
     const [year, month] = key.split('-')
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -56,6 +70,31 @@
 
   {#if reportsStore.importerExpanded}
     <div class="importer-body">
+      <!-- Download from Play Console -->
+      <div class="download-section">
+        <button
+          class="download-btn"
+          disabled={reportsStore.downloading}
+          onclick={handleDownloadFromPlayConsole}
+        >
+          {reportsStore.downloading ? 'Downloading...' : 'Download from Play Console'}
+        </button>
+        {#if downloadMessage}
+          <p class="download-message">{downloadMessage}</p>
+        {/if}
+        {#if reportsStore.downloadResult && reportsStore.downloadResult.errors.length > 0}
+          <div class="download-errors">
+            {#each reportsStore.downloadResult.errors as err}
+              <p class="download-error">{err}</p>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <div class="section-divider">
+        <span class="divider-label">or import manually</span>
+      </div>
+
       <!-- Drop zone -->
       <div
         class="drop-zone"
@@ -136,6 +175,69 @@
 
   .importer-body {
     padding: 0 16px 16px;
+  }
+
+  .download-section {
+    margin-bottom: 12px;
+  }
+
+  .download-btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.8125rem;
+    font-family: inherit;
+    font-weight: 500;
+    background: #0066cc;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .download-btn:hover:not(:disabled) {
+    background: #0052a3;
+  }
+
+  .download-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .download-message {
+    color: #2e7d32;
+    font-size: 0.8125rem;
+    margin-top: 8px;
+  }
+
+  .download-errors {
+    margin-top: 6px;
+  }
+
+  .download-error {
+    color: #d32f2f;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e0e0e0;
+  }
+
+  .divider-label {
+    font-size: 0.75rem;
+    color: #999;
+    white-space: nowrap;
   }
 
   .drop-zone {
