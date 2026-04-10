@@ -108,4 +108,4 @@ resources/         # App icons and build resources
 
 ## License
 
-This project is not currently published under an open-source license.
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
