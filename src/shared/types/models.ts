@@ -215,3 +215,23 @@ export interface AggregationResult {
   byCountry: CountryAggregation[]
   byProduct: ProductAggregation[]
 }
+
+// --- Phase 10: Release Notes Manager types ---
+
+export interface ReleaseNotesConfig {
+  versionOrder: string[]
+  versions: Record<string, { createdAt: string }>
+}
+
+export interface ReleaseNoteEntry {
+  locale: string
+  text: string
+  charCount: number
+}
+
+export interface PreflightWarning {
+  locale: string
+  versionName: string
+  severity: 'warning' | 'error'
+  message: string
+}

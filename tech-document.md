@@ -110,15 +110,22 @@ The application reads and writes exclusively to a designated `Workspace` directo
     │           ├── /wear                            <- API type: wearScreenshots
     │           └── /android_xr                      <- API type: androidXrScreenshots
     ├── /v1.1_Holiday                                <- Current/Live Version Directory
-    └── /screenshots                                 <- Screenshot Management Root
-        ├── screenshot_config.json                   <- Version order + screen order per version
-        ├── .undo/                                   <- Single backup image for undo
+    ├── /screenshots                                 <- Screenshot Management Root
+    │   ├── screenshot_config.json                   <- Version order + screen order per version
+    │   ├── .undo/                                   <- Single backup image for undo
+    │   └── /versions
+    │       └── /Initial_Set                         <- Screenshot Version Directory
+    │           └── /login                           <- Screen Directory (kebab-case slug)
+    │               ├── _screen.json                 <- Screen metadata + variant definitions
+    │               ├── light-mode.png               <- Variant image (slug.ext)
+    │               └── dark-mode.png
+    └── /release_notes                               <- Release Notes Management Root
+        ├── release_notes_config.json                <- Version order + per-version metadata
         └── /versions
-            └── /Initial_Set                         <- Screenshot Version Directory
-                └── /login                           <- Screen Directory (kebab-case slug)
-                    ├── _screen.json                 <- Screen metadata + variant definitions
-                    ├── light-mode.png               <- Variant image (slug.ext)
-                    └── dark-mode.png
+            └── /v2.0_Holiday                        <- Release Notes Version Directory
+                ├── en-US.txt                        <- Release note text per BCP-47 locale
+                ├── ar.txt
+                └── de-DE.txt
 ```
 
 ## 5. Data Models (JSON Schemas)
@@ -297,6 +304,39 @@ Key columns and their types:
 | First USD 1M Eligible | `firstMillionEligible` | `Yes` → true, `No` → false |
 | Service Fee % | `serviceFeePercent` | Parsed as number, empty → null |
 
+### 5.9 `release_notes_config.json`
+
+Located at `{app_root}/release_notes/`. Manages the release notes version hierarchy. Release note versions are **independent** of store listing versions — they have their own naming and lifecycle.
+```
+{
+  "versionOrder": ["v2.0_Holiday", "v1.0_Launch"],
+  "versions": {
+    "v1.0_Launch": { "createdAt": "2026-04-01T10:00:00Z" },
+    "v2.0_Holiday": { "createdAt": "2026-04-05T14:00:00Z" }
+  }
+}
+```
+
+* `versionOrder` defines display order (first entry is "latest"/newest). Updated when versions are added, deleted, or reordered.
+* Each version directory contains one `.txt` file per BCP-47 locale (e.g., `en-US.txt`, `ar.txt`). Each file contains the release note text for that language and version.
+* Release notes are limited to **500 characters per language** (Google Play Console limit).
+
+### 5.10 Release Note Text Files (`/release_notes/versions/{version}/{locale}.txt`)
+
+Plain UTF-8 text files containing the release note content for a single language in a single version. One file per locale per version. Directly readable and editable outside the app.
+
+The "Generate Output" feature combines text from multiple versions (newest → oldest) per locale, separated by `\n\n`, until the 500-character limit is reached. The output is formatted in the Play Console's tag format:
+```
+<en-US>
+What's new in v2.0: Holiday theme and performance improvements.
+
+v1.0: Initial release with core features.
+</en-US>
+<ar>
+الجديد في الإصدار 2.0: سمة العطلة وتحسينات الأداء.
+</ar>
+```
+
 ## 6. UI/UX Architecture & Data Flow
 
 ### Settings Page
@@ -455,6 +495,61 @@ The data model and aggregation engine are designed to support additional analyti
 * **Custom date grouping** — weekly or quarterly views
 
 These can be added as new aggregation functions and UI components without changing the storage format.
+
+### Screen 6: Release Notes Manager
+
+* **Access:** A "Release Notes" button on the App Dashboard, alongside "Screenshot Manager" and "Financial Reports". Breadcrumb: Home > App Name > Release Notes Manager.
+* **Purpose:** A dedicated release notes management page for creating and organizing release notes per version with multi-language support. Release notes are for local use only — not uploaded to Google Play via the API.
+* **Data location:** Release notes are stored per-app at `{app_root}/release_notes/`. Versions are independent of store listing versions.
+
+#### Release Note Versions
+
+Release note versions are **not tied to listing versions or APK versions** — they have independent naming and lifecycle.
+
+* **Layout:** A version selector tab bar at the top of the page shows all release note versions. The first entry in `versionOrder` is the "latest" and is shown by default.
+* **Action (New Version):** Creates an empty version directory. Prompts for a name. Inserts at the front of `versionOrder`.
+* **Action (Duplicate Version):** Deep-copies the currently active version's directory (all locale `.txt` files) to a new version. Prompts for a name.
+* **Action (Rename Version):** Renames the version directory. Updates `versionOrder` and `versions` key in `release_notes_config.json`.
+* **Action (Delete Version):** Moves the version directory to OS trash. Removes from `release_notes_config.json`. Confirmation dialog required.
+
+#### Languages
+
+Each version contains release note text files per BCP-47 locale. Languages are displayed as a **vertical list**, each with a textarea.
+
+* **Layout:** Each language entry shows the locale display name + BCP-47 tag, a textarea for the release note text, a character count (500-char Play Console limit), and duplicate/delete buttons.
+* **Action (Add Language):** Opens the existing `LocaleSelector` component. User picks a BCP-47 locale. Creates an empty `{locale}.txt` file. Already-added locales are excluded from the selector.
+* **Action (Duplicate Language):** Opens `LocaleSelector` for target locale selection. Copies the source locale's text to the new file. Useful for creating a translation starting point.
+* **Action (Delete Language):** Confirmation dialog. Deletes the locale's `.txt` file.
+* **Text Editing:** Textarea with live character count. Auto-saves on blur or after 500ms debounce via `fs:write-text-file`. Character count color: gray default, yellow at 90% (450+), red when over 500.
+
+#### Generate Output
+
+The "Generate Output" button produces combined release notes in the Play Console's tag format.
+
+* **Algorithm:** For each locale (sorted alphabetically):
+  1. Iterate through `versionOrder` (newest → oldest)
+  2. Read the locale's `.txt` file from each version
+  3. Append text (separated by `\n\n` between versions)
+  4. Stop when the next version's text would exceed 500 characters
+* **Output format:**
+  ```
+  <en-US>
+  What's new in v2.0: Holiday theme and performance improvements.
+
+  v1.0: Initial release with core features.
+  </en-US>
+  <ar>
+  الجديد في الإصدار 2.0: سمة العطلة وتحسينات الأداء.
+  </ar>
+  ```
+* **Preflight checks:** The generate dialog shows warnings for:
+  - Missing locales in older versions (skipped with warning)
+  - Versions where text was truncated due to the 500-char limit
+* **Copy to clipboard:** A "Copy to Clipboard" button copies the formatted output for pasting into the Play Console.
+
+#### Empty State
+
+When an app has no `release_notes/` directory yet, the page shows a welcome message with a "Create First Version" button.
 
 ## 7. Pre-Flight Validation Engine
 

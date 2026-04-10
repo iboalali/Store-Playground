@@ -5,6 +5,7 @@ export type Route =
   | { screen: 'editor'; appPath: string; versionDir: string }
   | { screen: 'screenshots'; appPath: string }
   | { screen: 'reports'; appPath: string }
+  | { screen: 'release-notes'; appPath: string }
 
 let route = $state<Route>({ screen: 'home' })
 
@@ -38,4 +39,8 @@ export function goToScreenshots(appPath: string): void {
 
 export function goToReports(appPath: string): void {
   navigate({ screen: 'reports', appPath })
+}
+
+export function goToReleaseNotes(appPath: string): void {
+  navigate({ screen: 'release-notes', appPath })
 }

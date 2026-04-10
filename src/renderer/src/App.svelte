@@ -5,6 +5,7 @@
   import { currentAppStore } from './stores/current-app.svelte'
   import { editorStore } from './stores/editor.svelte'
   import { screenshotManagerStore } from './stores/screenshot-manager.svelte'
+  import { releaseNotesStore } from './stores/release-notes.svelte'
   import { ipc } from '$lib/ipc'
   import Header from './components/layout/Header.svelte'
   import Settings from './screens/Settings.svelte'
@@ -13,6 +14,7 @@
   import StoreListingEditor from './screens/StoreListingEditor.svelte'
   import ScreenshotManager from './screens/ScreenshotManager.svelte'
   import FinancialReports from './screens/FinancialReports.svelte'
+  import ReleaseNotesManager from './screens/ReleaseNotesManager.svelte'
   import { reportsStore } from './stores/reports.svelte'
   import type { Route } from './router.svelte'
 
@@ -49,6 +51,9 @@
         break
       case 'reports':
         reportsStore.reload()
+        break
+      case 'release-notes':
+        releaseNotesStore.reload()
         break
     }
   }
@@ -134,6 +139,8 @@
     <ScreenshotManager />
   {:else if route.screen === 'reports'}
     <FinancialReports />
+  {:else if route.screen === 'release-notes'}
+    <ReleaseNotesManager />
   {/if}
 {/if}
 
