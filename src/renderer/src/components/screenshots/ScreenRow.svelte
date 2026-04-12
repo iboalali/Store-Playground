@@ -8,6 +8,8 @@
     onsetimage: (variantSlug: string, sourcePath: string) => void
     onsetimagedata: (variantSlug: string, base64Data: string) => void
     onclearimage: (variantSlug: string) => void
+    ondeletevariant: (variantSlug: string) => void
+    onduplicatevariant: (variantSlug: string) => void
     onmoveimage: (
       fromScreenSlug: string,
       fromVariantSlug: string,
@@ -29,6 +31,8 @@
     onsetimage,
     onsetimagedata,
     onclearimage,
+    ondeletevariant,
+    onduplicatevariant,
     onmoveimage,
     onexternaldrop,
     onaddvariant,
@@ -70,6 +74,8 @@
     {onsetimage}
     {onsetimagedata}
     {onclearimage}
+    {ondeletevariant}
+    {onduplicatevariant}
     {onmoveimage}
     {onexternaldrop}
     {onaddvariant}

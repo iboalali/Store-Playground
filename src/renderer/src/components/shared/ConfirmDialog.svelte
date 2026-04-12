@@ -54,6 +54,7 @@
     max-width: 90vw;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     font-family: inherit;
+    margin: auto;
   }
 
   dialog::backdrop {

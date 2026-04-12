@@ -8,6 +8,8 @@
     onsetimage: (variantSlug: string, sourcePath: string) => void
     onsetimagedata: (variantSlug: string, base64Data: string) => void
     onclearimage: (variantSlug: string) => void
+    ondeletevariant: (variantSlug: string) => void
+    onduplicatevariant: (variantSlug: string) => void
     onmoveimage: (
       fromScreenSlug: string,
       fromVariantSlug: string,
@@ -23,6 +25,8 @@
     onsetimage,
     onsetimagedata,
     onclearimage,
+    ondeletevariant,
+    onduplicatevariant,
     onmoveimage,
     onexternaldrop,
     onaddvariant
@@ -38,6 +42,8 @@
       onsetimage={(path) => onsetimage(variant.slug, path)}
       onsetimagedata={(data) => onsetimagedata(variant.slug, data)}
       onclear={() => onclearimage(variant.slug)}
+      ondelete={() => ondeletevariant(variant.slug)}
+      onduplicate={() => onduplicatevariant(variant.slug)}
       ondragstart={() => {}}
       ondrop={(srcScreen, srcVariant) => onmoveimage(srcScreen, srcVariant, variant.slug)}
       onexternaldrop={(path) => onexternaldrop(variant.slug, path)}

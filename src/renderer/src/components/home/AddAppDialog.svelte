@@ -23,6 +23,10 @@
       error = null
       creating = false
       dialogEl.showModal()
+      // Focus first input after modal opens
+      requestAnimationFrame(() => {
+        dialogEl?.querySelector<HTMLInputElement>('input')?.focus()
+      })
     } else if (!open && dialogEl?.open) {
       dialogEl.close()
     }

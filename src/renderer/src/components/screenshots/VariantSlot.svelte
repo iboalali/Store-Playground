@@ -9,6 +9,8 @@
     onsetimage: (sourcePath: string) => void
     onsetimagedata: (base64Data: string) => void
     onclear: () => void
+    ondelete: () => void
+    onduplicate: () => void
     ondragstart: (e: DragEvent) => void
     ondrop: (sourceScreenSlug: string, sourceVariantSlug: string) => void
     onexternaldrop: (filePath: string) => void
@@ -21,6 +23,8 @@
     onsetimage,
     onsetimagedata,
     onclear,
+    ondelete,
+    onduplicate,
     ondragstart,
     ondrop,
     onexternaldrop
@@ -136,12 +140,42 @@
       alt={variant.displayName}
       class="slot-img"
     />
-    <button class="slot-delete" onclick={onclear} title="Remove image">&times;</button>
   {:else}
-    <button class="slot-add" onclick={handlePick} title="Add image">
-      <span class="add-icon">+</span>
-    </button>
+    <div class="slot-empty">
+      <span class="empty-icon">+</span>
+    </div>
   {/if}
+
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="slot-overlay" onclick={(e) => e.stopPropagation()} onmousedown={(e) => e.stopPropagation()}>
+    <button class="overlay-btn" onclick={handlePick} title={variant.hasImage ? 'Replace image' : 'Add image'}>
+      <svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor">
+        {#if variant.hasImage}
+          <path d="M360-360h60v-120h120v-60H420v-120h-60v120H240v60h120v120ZM240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-560v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z"/>
+        {:else}
+          <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+        {/if}
+      </svg>
+    </button>
+    <button class="overlay-btn" onclick={onduplicate} title="Duplicate variant">
+      <svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor">
+        <path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/>
+      </svg>
+    </button>
+    {#if variant.hasImage}
+      <button class="overlay-btn" onclick={onclear} title="Remove image">
+        <svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor">
+          <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+        </svg>
+      </button>
+    {/if}
+    <button class="overlay-btn danger" onclick={ondelete} title="Delete variant">
+      <svg width="16" height="16" viewBox="0 -960 960 960" fill="currentColor">
+        <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+      </svg>
+    </button>
+  </div>
+
   <span class="slot-label">{variant.displayName}</span>
 </div>
 
@@ -187,51 +221,62 @@
     min-height: 0;
   }
 
-  .slot-delete {
-    position: absolute;
-    top: 3px;
-    right: 3px;
-    width: 22px;
-    height: 22px;
-    border: none;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    font-size: 0.875rem;
-    line-height: 1;
-    cursor: pointer;
+  .slot-empty {
+    flex: 1;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #ccc;
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .slot-overlay {
+    position: absolute;
+    inset: 0;
+    bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.45);
     opacity: 0;
     transition: opacity 0.15s;
   }
 
-  .variant-slot:hover .slot-delete {
+  .variant-slot:hover .slot-overlay,
+  .variant-slot:focus .slot-overlay {
     opacity: 1;
   }
 
-  .slot-add {
-    flex: 1;
-    width: 100%;
+  .overlay-btn {
+    width: 28px;
+    height: 28px;
     border: none;
-    background: none;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #888;
-    font-family: inherit;
+    padding: 0;
+    transition: background 0.1s, color 0.1s;
   }
 
-  .slot-add:hover {
+  .overlay-btn:hover {
+    background: #fff;
     color: #0066cc;
   }
 
-  .add-icon {
-    font-size: 2rem;
-    font-weight: 300;
-    line-height: 1;
+  .overlay-btn.danger:hover {
+    background: #fff;
+    color: #d32f2f;
   }
 
   .slot-label {

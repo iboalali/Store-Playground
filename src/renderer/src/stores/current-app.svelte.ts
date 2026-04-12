@@ -56,7 +56,7 @@ class CurrentAppStore {
   async saveDetails(details: AppDetails): Promise<void> {
     if (!this.appPath) return
     try {
-      await ipc.writeJsonFile(joinPath(this.appPath, 'app_details.json'), details)
+      await ipc.writeJsonFile(joinPath(this.appPath, 'app_details.json'), $state.snapshot(details))
       this.details = details
       this.error = null
     } catch (err) {
@@ -68,7 +68,7 @@ class CurrentAppStore {
     if (!this.appPath || !this.config) return
     try {
       const updated = { ...this.config, ...partial }
-      await ipc.writeJsonFile(joinPath(this.appPath, 'app_config.json'), updated)
+      await ipc.writeJsonFile(joinPath(this.appPath, 'app_config.json'), $state.snapshot(updated))
       this.config = updated
       await this.refresh()
     } catch (err) {
@@ -178,7 +178,7 @@ class CurrentAppStore {
       }
       await ipc.writeJsonFile(
         joinPath(this.appPath, versionDirName, 'version_metadata.json'),
-        updatedMeta
+        $state.snapshot(updatedMeta)
       )
       await this.refresh()
     } catch (err) {

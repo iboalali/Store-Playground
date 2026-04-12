@@ -8,6 +8,8 @@
   const route = $derived(getRoute())
   const appPath = $derived(route.screen === 'screenshots' ? route.appPath : '')
 
+  function autofocus(node: HTMLElement): void { node.focus() }
+
   const store = screenshotManagerStore
 
   // Dialog state
@@ -17,11 +19,14 @@
   let showDeleteVersionConfirm = $state(false)
   let showAddScreenPrompt = $state(false)
   let showAddVariantPrompt = $state(false)
+  let showDuplicateVariantPrompt = $state(false)
+  let showDeleteVariantConfirm = $state(false)
   let showRenameScreenPrompt = $state(false)
   let showDeleteScreenConfirm = $state(false)
 
   let promptInput = $state('')
   let targetScreenSlug = $state<string | null>(null)
+  let targetVariantSlug = $state<string | null>(null)
 
   $effect(() => {
     if (appPath) {
@@ -149,6 +154,40 @@
     targetScreenSlug = null
   }
 
+  function openDuplicateVariant(screenSlug: string, variantSlug: string): void {
+    const screen = store.screens.find((s) => s.slug === screenSlug)
+    const variant = screen?.variants.find((v) => v.slug === variantSlug)
+    promptInput = variant?.displayName ?? ''
+    targetScreenSlug = screenSlug
+    targetVariantSlug = variantSlug
+    showDuplicateVariantPrompt = true
+  }
+
+  function confirmDuplicateVariant(): void {
+    showDuplicateVariantPrompt = false
+    const name = promptInput.trim()
+    if (name && targetScreenSlug && targetVariantSlug) {
+      store.duplicateVariant(targetScreenSlug, targetVariantSlug, name)
+    }
+    targetScreenSlug = null
+    targetVariantSlug = null
+  }
+
+  function openDeleteVariant(screenSlug: string, variantSlug: string): void {
+    targetScreenSlug = screenSlug
+    targetVariantSlug = variantSlug
+    showDeleteVariantConfirm = true
+  }
+
+  function confirmDeleteVariant(): void {
+    showDeleteVariantConfirm = false
+    if (targetScreenSlug && targetVariantSlug) {
+      store.deleteVariant(targetScreenSlug, targetVariantSlug)
+    }
+    targetScreenSlug = null
+    targetVariantSlug = null
+  }
+
   function handlePromptKeydown(e: KeyboardEvent, confirmFn: () => void): void {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -197,6 +236,8 @@
         onsetimage={(sSlug, vSlug, path) => store.setVariantImage(sSlug, vSlug, path)}
         onsetimagedata={(sSlug, vSlug, data) => store.setVariantImageFromData(sSlug, vSlug, data)}
         onclearimage={(sSlug, vSlug) => store.clearVariantImage(sSlug, vSlug)}
+        ondeletevariant={(sSlug, vSlug) => openDeleteVariant(sSlug, vSlug)}
+        onduplicatevariant={(sSlug, vSlug) => openDuplicateVariant(sSlug, vSlug)}
         onmoveimage={(fromS, fromV, toS, toV) => store.moveVariantImage(fromS, fromV, toS, toV)}
         onexternaldrop={(sSlug, vSlug, path) => store.setVariantImage(sSlug, vSlug, path)}
         onaddvariant={(sSlug) => openAddVariant(sSlug)}
@@ -222,6 +263,7 @@
     <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
       <h3>New Version</h3>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Version name (e.g., Holiday Update)"
@@ -243,6 +285,7 @@
       <h3>Duplicate Version</h3>
       <p class="prompt-hint">Copying "{store.activeVersionName?.replace(/_/g, ' ')}"</p>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="New version name"
@@ -263,6 +306,7 @@
     <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
       <h3>Rename Version</h3>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Version name"
@@ -283,6 +327,7 @@
     <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
       <h3>Add Screen</h3>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Screen name (e.g., Login, Home)"
@@ -303,6 +348,7 @@
     <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
       <h3>Rename Screen</h3>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Screen display name"
@@ -324,6 +370,7 @@
       <h3>Add Variant</h3>
       <p class="prompt-hint">Enter a name like "Light Mode", "Dark Mode", or a locale like "Spanish"</p>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Variant name"
@@ -336,6 +383,37 @@
     </div>
   </div>
 {/if}
+
+{#if showDuplicateVariantPrompt}
+  <div class="prompt-overlay" onclick={() => (showDuplicateVariantPrompt = false)} role="presentation">
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
+      <h3>Duplicate Variant</h3>
+      <input
+        use:autofocus
+        type="text"
+        bind:value={promptInput}
+        placeholder="New variant name"
+        onkeydown={(e) => handlePromptKeydown(e, confirmDuplicateVariant)}
+      />
+      <div class="prompt-actions">
+        <button class="btn btn-secondary" onclick={() => (showDuplicateVariantPrompt = false)}>Cancel</button>
+        <button class="btn btn-primary" onclick={confirmDuplicateVariant} disabled={!promptInput.trim()}>Duplicate</button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<ConfirmDialog
+  open={showDeleteVariantConfirm}
+  title="Delete Variant"
+  message="Are you sure you want to delete this variant? The image will be moved to the trash."
+  confirmLabel="Delete"
+  confirmDanger={true}
+  onconfirm={confirmDeleteVariant}
+  oncancel={() => (showDeleteVariantConfirm = false)}
+/>
 
 <ConfirmDialog
   open={showDeleteVersionConfirm}

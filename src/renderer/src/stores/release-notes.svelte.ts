@@ -131,7 +131,7 @@ class ReleaseNotesManagerStore {
     if (!this.releaseNotesRoot || !this.config) return
     await ipc.writeJsonFile(
       joinPath(this.releaseNotesRoot, 'release_notes_config.json'),
-      this.config
+      $state.snapshot(this.config)
     )
   }
 

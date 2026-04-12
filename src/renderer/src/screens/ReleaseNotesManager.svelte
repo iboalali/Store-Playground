@@ -8,6 +8,8 @@
   import ConfirmDialog from '../components/shared/ConfirmDialog.svelte'
   import type { PreflightWarning } from '$shared/types/models'
 
+  function autofocus(node: HTMLElement): void { node.focus() }
+
   const RELEASE_NOTES_LIMIT = 500
 
   const route = $derived(getRoute())
@@ -198,6 +200,7 @@
     <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
       <h3>New Version</h3>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Version name (e.g., v2.0 Holiday)"
@@ -219,6 +222,7 @@
       <h3>Duplicate Version</h3>
       <p class="prompt-hint">Copying "{store.activeVersionName?.replace(/_/g, ' ')}"</p>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="New version name"
@@ -239,6 +243,7 @@
     <div class="prompt-dialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}} role="dialog">
       <h3>Rename Version</h3>
       <input
+        use:autofocus
         type="text"
         bind:value={promptInput}
         placeholder="Version name"

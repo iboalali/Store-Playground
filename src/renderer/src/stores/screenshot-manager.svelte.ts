@@ -165,7 +165,7 @@ class ScreenshotManagerStore {
     if (!this.screenshotsRoot || !this.config) return
     await ipc.writeJsonFile(
       joinPath(this.screenshotsRoot, 'screenshot_config.json'),
-      this.config
+      $state.snapshot(this.config)
     )
   }
 
@@ -370,6 +370,38 @@ class ScreenshotManagerStore {
       const meta = this.getScreenMeta(screen)
       meta.variantOrder.push(variantSlug)
       meta.variantNames[variantSlug] = displayName
+      await this.saveScreenMeta(screen.dirPath, meta)
+
+      if (this.activeVersionName) {
+        await this.loadVersionScreens(this.activeVersionName)
+      }
+    } catch (err) {
+      this.error = String(err)
+    }
+  }
+
+  async duplicateVariant(screenSlug: string, sourceVariantSlug: string, newDisplayName: string): Promise<void> {
+    if (!this.activeVersionDir) return
+
+    try {
+      const screen = this.screens.find((s) => s.slug === screenSlug)
+      if (!screen) return
+
+      const sourceVariant = screen.variants.find((v) => v.slug === sourceVariantSlug)
+      if (!sourceVariant) return
+
+      const newSlug = toSlug(newDisplayName)
+      const meta = this.getScreenMeta(screen)
+      const idx = meta.variantOrder.indexOf(sourceVariantSlug)
+      meta.variantOrder.splice(idx + 1, 0, newSlug)
+      meta.variantNames[newSlug] = newDisplayName
+
+      if (sourceVariant.hasImage) {
+        const ext = sourceVariant.filePath.split('.').pop() || 'png'
+        const newPath = joinPath(screen.dirPath, `${newSlug}.${ext}`)
+        await ipc.copyImage(sourceVariant.filePath, newPath)
+      }
+
       await this.saveScreenMeta(screen.dirPath, meta)
 
       if (this.activeVersionName) {
