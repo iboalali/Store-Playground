@@ -38,6 +38,7 @@ export const WATCHER_CHANGE = 'watcher:change' as const
 
 // Reports channels
 export const REPORTS_IMPORT_CSV = 'reports:import-csv' as const
+export const REPORTS_IMPORT_CSV_TEXT = 'reports:import-csv-text' as const
 export const REPORTS_GET_INDEX = 'reports:get-index' as const
 export const REPORTS_GET_MONTH = 'reports:get-month' as const
 export const REPORTS_GET_AGGREGATION = 'reports:get-aggregation' as const
@@ -76,6 +77,7 @@ export type IpcChannel =
   | typeof API_IMPORT_LIVE
   | typeof API_PROGRESS
   | typeof REPORTS_IMPORT_CSV
+  | typeof REPORTS_IMPORT_CSV_TEXT
   | typeof REPORTS_GET_INDEX
   | typeof REPORTS_GET_MONTH
   | typeof REPORTS_GET_AGGREGATION

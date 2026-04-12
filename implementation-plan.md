@@ -75,7 +75,7 @@ Store-Playground/
 │           │   └── Settings.svelte
 │           ├── components/
 │           │   ├── layout/
-│           │   │   ├── Header.svelte      # App header with nav breadcrumbs + gear icon
+│           │   │   ├── Header.svelte      # App header with nav breadcrumbs + reports icon + settings icon
 │           │   │   └── ProgressPanel.svelte
 │           │   ├── home/
 │           │   │   ├── AppCard.svelte
@@ -581,7 +581,7 @@ export interface ProductAggregation {
 ```typescript
 | { screen: 'reports'; appPath: string }
 ```
-6 screens total. Breadcrumb: Home > App Name > Financial Reports.
+7 routes total. Per-app breadcrumb: Home > App Name > Financial Reports. Global breadcrumb: Home > Financial Reports.
 
 **Store — create `src/renderer/src/stores/reports.svelte.ts`:**
 - State: index, selectedMonths (range), currentApp (package name for filtering), monthlyData (loaded transactions), aggregations
@@ -622,8 +622,8 @@ export interface ProductAggregation {
 - The page loads filtered to the current app's package name (from `app_config.json -> packageName`)
 - A dropdown at the top allows switching to "All Apps" view or selecting a different app
 
-**Access from Home Grid (optional):**
-- A small "Reports" icon on each app card, or a global "Reports" entry in the menu bar, could navigate directly
+**Global access from header:**
+- A bar chart icon in the application header navigates to a global Financial Reports view (all apps, no per-app filter toggle)
 
 **Charting approach:**
 - Prefer lightweight SVG-based charts (no heavy dependency). If needed, add `chart.js` (63KB gzipped) as a runtime dependency — it covers line, bar, and doughnut charts and works well in Electron.
@@ -707,7 +707,7 @@ After each phase, verify by:
 3. `npx svelte-check` — no type errors in renderer
 4. `npx tsc --noEmit -p tsconfig.node.json` — no type errors in main/preload
 
-End-to-end verification after Phase 10:
+End-to-end verification after Phase 12:
 1. Launch app -> Settings -> set workspace path -> Home Grid shows apps
 2. Add App -> appears in grid -> click -> Dashboard loads
 3. Create/Duplicate/Rename/Archive/Delete versions
@@ -744,6 +744,7 @@ End-to-end verification after Phase 10:
 * Phase 9: Financial Reports & Analytics ✅ (see `phase-9-plan.md` for detailed implementation plan)
 * Phase 10: Release Notes Manager ✅ (see `phase-10-plan.md` for detailed implementation plan)
 * Phase 11: Play Console Finance Download ✅ (see `phase-11-plan.md` for detailed implementation plan)
+* Phase 12: Electron 41 Upgrade & UI Polish ✅
 
 ### Phase 10: Release Notes Manager
 **Goal:** A dedicated release notes management page with version/language CRUD and Play Console output generation
@@ -804,6 +805,79 @@ End-to-end verification after Phase 10:
 
 ## Completed Phases (updated)
 * Phase 10: Reset Everything ✅
+
+### Phase 12: Electron 41 Upgrade & UI Polish
+**Goal:** Upgrade to Electron 41, fix compatibility issues, and polish the UI across all screens
+
+**Electron 41 upgrade:**
+- Upgraded `electron` to v41 and `electron-builder` to v26 (resolves 12 npm audit vulnerabilities)
+- Fixed preload script failing to load: Electron 41 with `sandbox: true` requires CommonJS preload. Changed `electron.vite.config.ts` to output CJS format (`format: 'cjs'`) and updated preload path in `src/main/index.ts` from `.mjs` to `.cjs`
+
+**Custom protocol for local images:**
+- Registered a `local-file://` custom protocol via `protocol.handle()` in `src/main/index.ts` to serve workspace images in dev mode (where renderer loads from `http://localhost`, blocking cross-origin `file://` URLs)
+- Updated CSP in `src/renderer/index.html` to allow `local-file:` in `img-src`
+- Migrated all `file://` image references to `local-file://` across 5 components: `AppCard.svelte`, `ImageSlot.svelte`, `ScreenshotSection.svelte`, `ScreenshotPicker.svelte`, `VariantSlot.svelte`
+
+**Window constraints:**
+- Added `minWidth: 800` and `minHeight: 600` to `BrowserWindow` options
+
+**Header improvements:**
+- Replaced sun icon with Material Symbols cog icon for settings button
+- Added Financial Reports bar chart icon button to the left of the settings cog (navigates to global reports)
+- Refactored header buttons into a `.header-actions` container
+- Added breadcrumbs for `release-notes` and `reports-global` routes
+
+**Home Grid improvements:**
+- "Import from Play" button now shows an error banner when clicked without a configured service account (instead of being silently disabled)
+- Replaced the Import from Play text icon with a Material Symbols cloud download SVG
+
+**App Dashboard improvements:**
+- Moved app name and package name above the action buttons (separate row)
+- Action buttons now wrap (`flex-wrap`) instead of overflowing
+- Removed fixed `max-width` constraint so content stretches with the window
+
+**Screen layout:**
+- Removed `max-width` constraints from all screens: AppDashboard (800px), StoreListingEditor (900px), ScreenshotManager (1100px), FinancialReports (1200px), ReleaseNotesManager (800px)
+
+**App Details form:**
+- Replaced plain text input for Default Language with a searchable dropdown using `LOCALE_OPTIONS` from `locale-names.ts`
+- Dropdown filters by language name or BCP-47 tag as the user types
+- Form fields capped at `max-width: 500px` for readability
+
+**Dialog centering:**
+- Added `margin: auto` to `AddAppDialog` to ensure vertical + horizontal centering
+
+**Global Financial Reports:**
+- Added `reports-global` route to `router.svelte.ts` with `goToReportsGlobal()` helper
+- Added `loadGlobal()` method to `reports.svelte.ts` — loads reports without scoping to an app, forces "All Apps" view mode
+- `load(appPath)` now explicitly sets `viewMode = 'app'`; `loadGlobal()` sets `viewMode = 'all'`
+- `FinancialReports.svelte` detects global vs per-app mode; hides the "This App / All Apps" toggle in global mode
+- Used `{#key route.screen}` in `App.svelte` to force component re-creation when switching between per-app and global reports
+
+**Files changed:**
+- `electron.vite.config.ts` — preload CJS output
+- `src/main/index.ts` — preload path, custom protocol, min window size
+- `src/renderer/index.html` — CSP update
+- `src/renderer/src/App.svelte` — reports-global route, key block
+- `src/renderer/src/router.svelte.ts` — reports-global route + helper
+- `src/renderer/src/stores/reports.svelte.ts` — loadGlobal(), viewMode init
+- `src/renderer/src/components/layout/Header.svelte` — icons, reports button, breadcrumbs
+- `src/renderer/src/components/dashboard/AppDetailsForm.svelte` — searchable locale dropdown
+- `src/renderer/src/components/home/AppCard.svelte` — local-file:// protocol
+- `src/renderer/src/components/home/AddAppDialog.svelte` — centering
+- `src/renderer/src/components/editor/ImageSlot.svelte` — local-file://
+- `src/renderer/src/components/editor/ScreenshotPicker.svelte` — local-file://
+- `src/renderer/src/components/editor/ScreenshotSection.svelte` — local-file://
+- `src/renderer/src/components/screenshots/VariantSlot.svelte` — local-file://
+- `src/renderer/src/screens/HomeGrid.svelte` — import error, cloud icon
+- `src/renderer/src/screens/AppDashboard.svelte` — layout, wrapping
+- `src/renderer/src/screens/FinancialReports.svelte` — global mode
+- `src/renderer/src/screens/StoreListingEditor.svelte` — removed max-width
+- `src/renderer/src/screens/ScreenshotManager.svelte` — removed max-width
+- `src/renderer/src/screens/ReleaseNotesManager.svelte` — removed max-width
+
+## Completed Phases (updated)
+* Phase 12: Electron 41 Upgrade & UI Polish ✅
 
 ## Future Work
 * Android XR

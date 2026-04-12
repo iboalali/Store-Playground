@@ -27,6 +27,7 @@ import {
   API_IMPORT_LIVE,
   API_PROGRESS,
   REPORTS_IMPORT_CSV,
+  REPORTS_IMPORT_CSV_TEXT,
   REPORTS_GET_INDEX,
   REPORTS_GET_MONTH,
   REPORTS_GET_AGGREGATION,
@@ -118,6 +119,8 @@ contextBridge.exposeInMainWorld('api', {
   // Reports
   importCsv: (args: { csvPath: string; workspacePath: string }) =>
     ipcRenderer.invoke(REPORTS_IMPORT_CSV, args),
+  importCsvText: (args: { csvText: string; filename: string; workspacePath: string }) =>
+    ipcRenderer.invoke(REPORTS_IMPORT_CSV_TEXT, args),
   getReportsIndex: (args: { workspacePath: string }) =>
     ipcRenderer.invoke(REPORTS_GET_INDEX, args),
   getReportsMonth: (args: { workspacePath: string; monthKey: string }) =>
@@ -153,5 +156,6 @@ contextBridge.exposeInMainWorld('api', {
     return (): void => {
       ipcRenderer.removeListener(MENU_ACTION, handler as Parameters<typeof ipcRenderer.removeListener>[1])
     }
-  }
+  },
+
 })

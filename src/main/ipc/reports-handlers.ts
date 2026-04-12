@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import {
   REPORTS_IMPORT_CSV,
+  REPORTS_IMPORT_CSV_TEXT,
   REPORTS_GET_INDEX,
   REPORTS_GET_MONTH,
   REPORTS_GET_AGGREGATION,
@@ -10,6 +11,7 @@ import {
 } from '$shared/types/ipc-channels'
 import type {
   ReportsImportCsvRequest,
+  ReportsImportCsvTextRequest,
   ReportsGetIndexRequest,
   ReportsGetMonthRequest,
   ReportsGetAggregationRequest,
@@ -28,6 +30,18 @@ export function registerReportsHandlers(): void {
     async (_event, args: ReportsImportCsvRequest): Promise<IpcResult<ImportSummary>> => {
       try {
         const result = await reports.importCsv(args.csvPath, args.workspacePath)
+        return { success: true, data: result }
+      } catch (err) {
+        return { success: false, error: String(err) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    REPORTS_IMPORT_CSV_TEXT,
+    async (_event, args: ReportsImportCsvTextRequest): Promise<IpcResult<ImportSummary>> => {
+      try {
+        const result = await reports.importCsvText(args.csvText, args.filename, args.workspacePath)
         return { success: true, data: result }
       } catch (err) {
         return { success: false, error: String(err) }

@@ -55,7 +55,7 @@ dist
 - `app.whenReady()` -> `createWindow()`
 - BrowserWindow: 1200x800, `show: false` + `ready-to-show` pattern
 - Security: `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`
-- Preload path: `join(__dirname, '../preload/index.mjs')`
+- Preload path: `join(__dirname, '../preload/index.cjs')` (sandbox requires CJS)
 - Dev: load `process.env.ELECTRON_RENDERER_URL` via `@electron-toolkit/utils` `is.dev`
 - Prod: `loadFile(join(__dirname, '../renderer/index.html'))`
 - macOS `activate` + cross-platform `window-all-closed` handlers
@@ -135,7 +135,7 @@ Store-Playground/
 3. **`sharp` externalized** in rollup — native bindings can't be bundled; `asarUnpack` handles production
 4. **electron-vite v3** auto-externalizes Electron + Node built-ins for main/preload
 5. **Empty `api` preload object** establishes the pattern for Phase 2 typed IPC
-6. **Preload output is `.mjs`** — electron-vite outputs ESM for preload, so main process must reference `../preload/index.mjs`
+6. **Preload output is `.cjs`** — Electron with `sandbox: true` requires CommonJS preload scripts. The `electron.vite.config.ts` preload build config sets `rollupOptions.output.format: 'cjs'`, producing `index.cjs`. The main process references `../preload/index.cjs`
 
 ---
 
@@ -144,4 +144,4 @@ Store-Playground/
 1. `npm run typecheck:node` — no TypeScript errors in main/preload
 2. `npm run typecheck:web` — no Svelte/TS errors in renderer
 3. `npm run dev` — Electron window launches, shows "Store Playground" centered
-4. `npm run build` — produces `out/main/index.js`, `out/preload/index.mjs`, `out/renderer/index.html`
+4. `npm run build` — produces `out/main/index.js`, `out/preload/index.cjs`, `out/renderer/index.html`

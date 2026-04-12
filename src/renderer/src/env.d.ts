@@ -58,6 +58,7 @@ interface Api {
   }): Promise<IpcResult<void>>
   // Reports
   importCsv(args: { csvPath: string; workspacePath: string }): Promise<IpcResult<ImportSummary>>
+  importCsvText(args: { csvText: string; filename: string; workspacePath: string }): Promise<IpcResult<ImportSummary>>
   getReportsIndex(args: { workspacePath: string }): Promise<IpcResult<ReportsIndex>>
   getReportsMonth(args: { workspacePath: string; monthKey: string }): Promise<IpcResult<Transaction[]>>
   getReportsAggregation(args: {

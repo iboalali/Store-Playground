@@ -165,6 +165,14 @@ export interface ReportsImportCsvRequest {
 }
 export type ReportsImportCsvResponse = IpcResult<ImportSummary>
 
+// reports:import-csv-text — same as import-csv but accepts CSV text content directly (for drag-and-drop)
+export interface ReportsImportCsvTextRequest {
+  csvText: string
+  filename: string
+  workspacePath: string
+}
+export type ReportsImportCsvTextResponse = IpcResult<ImportSummary>
+
 // reports:get-index — read reports_index.json
 export interface ReportsGetIndexRequest {
   workspacePath: string

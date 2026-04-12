@@ -31,9 +31,10 @@
     e.preventDefault()
     dragOver = false
     const file = e.dataTransfer?.files[0]
-    if (file?.path && file.name.endsWith('.csv')) {
+    if (file && file.name.endsWith('.csv')) {
       importMessage = ''
-      await reportsStore.importCsv(file.path)
+      const csvText = await file.text()
+      await reportsStore.importCsvText(csvText, file.name)
       importMessage = 'CSV imported successfully'
     }
   }

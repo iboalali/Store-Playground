@@ -172,6 +172,29 @@ class ReportsStore {
     }
   }
 
+  async importCsvText(csvText: string, filename: string): Promise<void> {
+    if (!this.workspacePath) return
+    this.importing = true
+    this.error = null
+
+    try {
+      await ipc.importCsvText(csvText, filename, this.workspacePath)
+      this.index = await ipc.getReportsIndex(this.workspacePath)
+
+      const available = this.availableMonths
+      if (this.selectedMonths.length === 0) {
+        this.selectedMonths = available.slice(0, 6)
+      }
+
+      await this.computeAggregations()
+      await this.loadTransactions()
+    } catch (err) {
+      this.error = String(err)
+    } finally {
+      this.importing = false
+    }
+  }
+
   async selectMonths(months: string[]): Promise<void> {
     this.selectedMonths = months
     this.transactionPage = 0
@@ -188,7 +211,7 @@ class ReportsStore {
     try {
       this.aggregations = await ipc.getReportsAggregation(
         this.workspacePath,
-        this.selectedMonths,
+        [...this.selectedMonths],
         this.activeAppFilter
       )
     } catch (err) {

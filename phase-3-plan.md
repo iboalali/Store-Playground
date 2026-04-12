@@ -94,18 +94,18 @@ Note: `trashItem` excluded from service (Electron-specific); handler calls `shel
 
 ### Step 8: Update CSP for Local Image Loading
 
-**`src/renderer/index.html`** — MODIFY: update CSP to allow file:// and data: images:
+**`src/renderer/index.html`** — MODIFY: update CSP to allow local-file://, file://, and data: images:
 ```
-img-src 'self' file: data:
+img-src 'self' file: data: local-file:
 ```
-Required for displaying app icons from the workspace filesystem.
+Required for displaying app icons from the workspace filesystem. A custom `local-file://` protocol is registered in the main process to serve workspace files, since `file://` URLs are blocked when the renderer loads from `http://localhost` in dev mode.
 
 ### Step 9: Build UI Components
 
 **`src/renderer/src/components/home/AppCard.svelte`** — NEW:
 - Props: `appEntry: AppEntry`
 - Clickable card calling `goToDashboard(appEntry.appPath)`
-- Shows icon (file:// URL if hasIcon, else default-app-icon import), app name, package name
+- Shows icon (local-file:// URL if hasIcon, else default-app-icon import), app name, package name
 - `onerror` handler on `<img>` falls back to default icon
 - Styled as card: white bg, border, rounded corners, hover state, ~64x64 icon
 
@@ -160,7 +160,7 @@ Required for displaying app icons from the workspace filesystem.
 
 1. **`fs:create-app` as atomic IPC** — Instead of having the renderer orchestrate multiple fs calls, a single high-level channel handles the entire create-app flow. The main process knows where the default icon lives, so the renderer never needs to resolve resource paths.
 
-2. **Icon loading via file:// protocol** — Simplest approach for Phase 3. CSP updated to allow `img-src file: data:`. A custom protocol can replace this later if needed.
+2. **Icon loading via local-file:// custom protocol** — A custom `local-file://` protocol is registered in the main process via `protocol.handle()` to serve workspace files. This is required because in dev mode the renderer loads from `http://localhost`, which blocks cross-origin `file://` URLs. CSP updated to allow `img-src file: data: local-file:`.
 
 3. **Stateless filesystem service** — Unlike SettingsService (class with cache), the filesystem module exports plain functions since there's no persistent state to manage.
 

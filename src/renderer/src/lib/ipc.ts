@@ -136,6 +136,10 @@ export const ipc = {
     return unwrap(await window.api.importCsv({ csvPath, workspacePath }))
   },
 
+  async importCsvText(csvText: string, filename: string, workspacePath: string): Promise<ImportSummary> {
+    return unwrap(await window.api.importCsvText({ csvText, filename, workspacePath }))
+  },
+
   async getReportsIndex(workspacePath: string): Promise<ReportsIndex> {
     return unwrap(await window.api.getReportsIndex({ workspacePath }))
   },

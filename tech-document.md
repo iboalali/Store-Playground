@@ -344,7 +344,7 @@ v1.0: Initial release with core features.
 
 ### Settings Page
 
-* **Access:** Available via a gear icon in the application header, accessible from any screen.
+* **Access:** Available via a settings (cog) icon in the application header, accessible from any screen.
 * **Workspace Path (Required):** A directory picker for the workspace root. The Home Grid is inaccessible until a valid workspace path is set.
 * **Service Account Key Path (Optional):** A file picker for the Google Cloud Service Account JSON key. Required only for Publish, Import, and Finance Download operations. If not set, API-dependent buttons are disabled with a tooltip explaining why.
 * **Play Console Bucket (Optional):** A text input for the GCS bucket name where Play Console deposits earnings reports (e.g. `pubsite_prod_rev_01234567890`). Found in Play Console under Download reports > Financial > Cloud Storage URI. Required for automatic finance report downloads.
@@ -358,7 +358,7 @@ v1.0: Initial release with core features.
 * **Data Sources:** Reads `app_config.json` (Name) and `local_ui_icon.png` (Thumbnail).
 * **UI Constraint:** Fast loading. Does not deeply scan version folders yet.
 * **Action (Add App):** An "Add App" button prompts for a package name and display name, with an optional file picker for a custom app icon. The backend creates a new app root directory named by the package ID, containing a populated `app_config.json`, an empty `app_details.json`, and the provided icon saved as `local_ui_icon.png`. If no icon is provided, a bundled generic app icon is used instead.
-* **Action (Import from Play Console):** An "Import from Play Console" button prompts for a package name. Requires an authenticated service account. The backend fetches the live app data from Google Play and creates the full local structure (reuses the Import Live flow from Section 9.3, targeting a new app root directory).
+* **Action (Import from Play Console):** An "Import from Play Console" button prompts for a package name. If a service account key is not configured, clicking the button shows an error banner instead of opening the import dialog. Requires an authenticated service account. The backend fetches the live app data from Google Play and creates the full local structure (reuses the Import Live flow from Section 9.3, targeting a new app root directory).
 
 ### Screen 2: App Dashboard
 
@@ -455,9 +455,11 @@ When an app has no `screenshots/` directory yet, the page shows a welcome messag
 
 ### Screen 5: Financial Reports
 
-* **Access:** A "Financial Reports" button on the App Dashboard, alongside "Screenshot Manager". Breadcrumb: Home > App Name > Financial Reports.
-* **Purpose:** A per-app revenue analytics dashboard driven by Google Play Console earnings CSV files. Reports can be downloaded directly from the Play Console's GCS bucket or imported manually. Since the Google Play Developer API does not expose financial data, earnings reports are accessed via the Google Cloud Storage JSON API.
-* **Data location:** Reports are stored at the **workspace level** (`{workspace}/reports/`), not per-app, because a single CSV contains all apps. The UI filters by `Product id` (package name) for per-app views.
+* **Access:** Two entry points:
+  1. **Per-app:** A "Financial Reports" button on the App Dashboard. Breadcrumb: Home > App Name > Financial Reports. Opens filtered to the current app's package name with "This App" view mode pre-selected.
+  2. **Global:** A bar chart icon button in the application header (next to the settings cog), accessible from any screen. Breadcrumb: Home > Financial Reports. Opens in "All Apps" view mode with the "This App / All Apps" toggle hidden.
+* **Purpose:** A revenue analytics dashboard driven by Google Play Console earnings CSV files. Reports can be downloaded directly from the Play Console's GCS bucket or imported manually. Since the Google Play Developer API does not expose financial data, earnings reports are accessed via the Google Cloud Storage JSON API.
+* **Data location:** Reports are stored at the **workspace level** (`{workspace}/reports/`), not per-app, because a single CSV contains all apps. The per-app view filters by `Product id` (package name).
 
 #### GCS Download (Automatic)
 
@@ -475,7 +477,7 @@ When an app has no `screenshots/` directory yet, the page shows a welcome messag
 #### Dashboard Layout
 
 * **Top bar:** CsvImporter (collapsible) + MonthSelector (month/year range picker, defaults to latest 6 months)
-* **App filter:** Defaults to the current app's package name. A dropdown allows switching to "All Apps" or a different specific app.
+* **App filter:** When accessed from an app dashboard, defaults to the current app's package name with a toggle to switch between "This App" and "All Apps". When accessed globally from the header, defaults to "All Apps" with the toggle hidden.
 * **Summary cards row:** `RevenueSummary` — four cards showing:
   * **Gross Revenue** — sum of charge amounts in merchant currency
   * **Google Fees** — sum of fee amounts (with percentage of gross)

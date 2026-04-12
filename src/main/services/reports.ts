@@ -100,8 +100,7 @@ function parseAmount(value: string): number {
   return isNaN(num) ? 0 : num
 }
 
-export async function parseEarningsCsv(csvPath: string): Promise<Map<string, Transaction[]>> {
-  const raw = await readFile(csvPath, 'utf-8')
+export function parseEarningsCsvText(raw: string): Map<string, Transaction[]> {
   const lines = raw.split('\n').filter((l) => l.trim().length > 0)
 
   if (lines.length < 2) {
@@ -191,6 +190,11 @@ export async function parseEarningsCsv(csvPath: string): Promise<Map<string, Tra
   return monthMap
 }
 
+export async function parseEarningsCsv(csvPath: string): Promise<Map<string, Transaction[]>> {
+  const raw = await readFile(csvPath, 'utf-8')
+  return parseEarningsCsvText(raw)
+}
+
 // --- Index management ---
 
 const REPORTS_DIR = 'reports'
@@ -234,17 +238,12 @@ export async function getMonth(workspacePath: string, monthKey: string): Promise
   return parsed.transactions
 }
 
-export async function importCsv(csvPath: string, workspacePath: string): Promise<ImportSummary> {
-  await ensureDirs(workspacePath)
-
-  const monthMap = await parseEarningsCsv(csvPath)
-
-  if (monthMap.size === 0) {
-    throw new Error('No valid transactions found in CSV')
-  }
-
-  const filename = basename(csvPath)
-
+async function doImport(
+  monthMap: Map<string, Transaction[]>,
+  filename: string,
+  workspacePath: string,
+  rawCsvForCopy?: { source: 'path'; csvPath: string } | { source: 'text'; csvText: string }
+): Promise<ImportSummary> {
   // Write parsed JSON for each month
   let totalRows = 0
   const allApps = new Set<string>()
@@ -261,9 +260,13 @@ export async function importCsv(csvPath: string, workspacePath: string): Promise
     await writeFile(parsedPath, JSON.stringify({ month: monthKey, transactions }, null, 2), 'utf-8')
   }
 
-  // Copy raw CSV
+  // Save raw CSV
   const csvDest = reportsPath(workspacePath, CSV_DIR, filename)
-  await copyFile(csvPath, csvDest)
+  if (rawCsvForCopy?.source === 'path') {
+    await copyFile(rawCsvForCopy.csvPath, csvDest)
+  } else if (rawCsvForCopy?.source === 'text') {
+    await writeFile(csvDest, rawCsvForCopy.csvText, 'utf-8')
+  }
 
   // Update index
   const index = await getIndex(workspacePath)
@@ -298,6 +301,20 @@ export async function importCsv(csvPath: string, workspacePath: string): Promise
     apps,
     filename
   }
+}
+
+export async function importCsv(csvPath: string, workspacePath: string): Promise<ImportSummary> {
+  await ensureDirs(workspacePath)
+  const monthMap = await parseEarningsCsv(csvPath)
+  if (monthMap.size === 0) throw new Error('No valid transactions found in CSV')
+  return doImport(monthMap, basename(csvPath), workspacePath, { source: 'path', csvPath })
+}
+
+export async function importCsvText(csvText: string, filename: string, workspacePath: string): Promise<ImportSummary> {
+  await ensureDirs(workspacePath)
+  const monthMap = parseEarningsCsvText(csvText)
+  if (monthMap.size === 0) throw new Error('No valid transactions found in CSV')
+  return doImport(monthMap, filename, workspacePath, { source: 'text', csvText })
 }
 
 export async function deleteMonth(workspacePath: string, monthKey: string): Promise<void> {
